@@ -1,9 +1,8 @@
 // src/main/java/com/hirehub/backend/controller/UserController.java
 
-package com.codesentry.backend.controller;
-
-import com.codesentry.backend.model.User;
-import com.hirehub.backend.repository.UserRepository;
+package com.codesentry.Backend.Controller;
+import com.codesentry.Backend.Model.User;
+import com.codesentry.Backend.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
