@@ -11,6 +11,7 @@ import CreateTest from './Components/AdminDashboard/CreateTest';
 import AptitudeTestBuilder from './Components/AdminDashboard/AptitudeTestBuilder';
 import CodingTestBuilder from './Components/AdminDashboard/CodingTestBuilder';  
 import './App.css';
+import TestDetails from './Components/AdminDashboard/TestDetails';
 
 function App() {
   return (
@@ -44,6 +45,12 @@ function App() {
             <CodingTestBuilder />
           </AdminLayout>
         } />
+
+        <Route path = "/admin/tests/:id" element = {
+          <AdminLayout>
+            <TestDetails />
+          </AdminLayout>
+        }/>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
       </Routes>
