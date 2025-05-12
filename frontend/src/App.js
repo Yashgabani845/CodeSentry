@@ -1,9 +1,22 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './Components/Login';
+import Signup from './Components/Signup';
+import Homepage from './Components/Homepage/HomePage';
+import Profile from './Components/Profile';
 import './App.css';
+
 function App() {
   return (
-    <><div className="bg-blue-500 text-white p-4 rounded-lg">
-      Hello Tailwind!
-    </div></>
+    <Router>
+      <Routes>
+      <Route path="/" element={<Homepage />} />
+      <Route path="/profile" element={<Profile />} />
+
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
+    </Router>
   );
 }
 
