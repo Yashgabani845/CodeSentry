@@ -12,7 +12,7 @@ import AptitudeTestBuilder from './Components/AdminDashboard/AptitudeTestBuilder
 import CodingTestBuilder from './Components/AdminDashboard/CodingTestBuilder';  
 import './App.css';
 import TestDetails from './Components/AdminDashboard/TestDetails';
-import CodingEnvironment from './Components/Coding';
+import CodingEnvironment from './Components/Coding/Coding';
 function App() {
   return (
     <Router>

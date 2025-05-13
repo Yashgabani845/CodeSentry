@@ -58,9 +58,6 @@ const HeroSection = () => {
               <div className="ml-4 text-white text-sm font-mono">CodeSentry Live Environment</div>
             </div>
             <div className="bg-gray-900 p-4 font-mono text-sm text-green-400 h-64 overflow-y-auto">
-              <p>// CodeSentry Assessment Platform</p>
-              <p className="opacity-75">// Secure, monitored environment</p>
-              <br/>
               <p><span className="text-blue-400">function</span> <span className="text-yellow-300">sortArray</span>(<span className="text-orange-300">arr</span>) {'{'}</p>
               <p>&nbsp;&nbsp;<span className="text-blue-400">if</span> (!arr || arr.length === 0) {'{'}</p>
               <p>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue-400">return</span> [];</p>
@@ -68,15 +65,11 @@ const HeroSection = () => {
               <p>&nbsp;&nbsp;<span className="text-blue-400">return</span> arr.sort(<span className="text-orange-300">(a, b) =</span>( a - b));</p>
               <p>{'}'}</p>
               <br/>
-              <p><span className="text-gray-500">// Test your function</span></p>
+              <p><span className="text-gray-500">Test your function</span></p>
               <p><span className="text-yellow-300">const</span> numbers = [5, 3, 8, 1, 2];</p>
               <p><span className="text-yellow-300">const</span> sorted = sortArray(numbers);</p>
               <p>console.log(sorted); <span className="text-gray-500">// [1, 2, 3, 5, 8]</span></p>
-              <div className="border-l-2 border-yellow-500 pl-2 mt-2 animate-pulse-slow">
-                <p>// Live environment detected</p>
-                <p>// Monitoring active</p>
-                <p>// Secure proctoring enabled</p>
-              </div>
+            
             </div>
           </div>
           

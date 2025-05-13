@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Code, Home, PlusCircle, Settings, Users } from 'lucide-react';
+import { BookOpen, Home, PlusCircle, Settings, Users } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../Homepage/Navbar'; // Assuming Navbar component exists
 import Footer from '../Homepage/Footer'; // Assuming Footer component exists
