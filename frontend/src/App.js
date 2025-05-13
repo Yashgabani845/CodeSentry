@@ -12,12 +12,13 @@ import AptitudeTestBuilder from './Components/AdminDashboard/AptitudeTestBuilder
 import CodingTestBuilder from './Components/AdminDashboard/CodingTestBuilder';  
 import './App.css';
 import TestDetails from './Components/AdminDashboard/TestDetails';
-
+import CodingEnvironment from './Components/Coding';
 function App() {
   return (
     <Router>
       <Routes>
       <Route path="/" element={<Homepage />} />
+      <Route path="/code" element={<CodingEnvironment />} />
       <Route path="/profile" element={<Profile />} />
         
         <Route path="/admin" element={
