@@ -1,134 +1,116 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, Check, Plus, Save, Trash2, X } from 'lucide-react';
+import { AlertCircle, Check, Plus, Save, Trash2, X, ChevronDown, ChevronUp, Code } from 'lucide-react';
+import ExampleSection from './ExampleSection';
+import TestCaseSection from './TestCaseSection';
+import ConstraintsSection from './ConstraintsSection';
+import CodeEditor from './CodeEditor';
+import { createCodingTest } from '../../Services/CodingTestService';
 
 const CodingTestBuilder = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // This is the parent test ID
   const navigate = useNavigate();
-  
-  const [testDetails, setTestDetails] = useState(null);
-  const [problems, setProblems] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const [codingTest, setCodingTest] = useState({
+    title: '',
+    description: '',
+    examples: [{ input: '', output: '' }],
+    testCases: [{ input: '', output: '' }],
+    constraints: [''],
+    marks: 25,
+    solution: '// Your JavaScript solution here\n\nfunction solve(input) {\n  // Write your code here\n  \n  return result;\n}',
+    createdBy: 'admin',
+    testId: id // Store the parent test ID
+  });
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  useEffect(() => {
-    const fetchTestData = async () => {
-      try {
-        // In a real app, you would fetch the test details
-        // const response = await fetch(`http://localhost:8080/api/tests/${id}`);
-        // const data = await response.json();
-        // setTestDetails(data);
-        
-        // For demo purposes
-        setTestDetails({
-          id: id || 'demo-id',
-          testName: 'JavaScript Coding Assessment',
-          testType: 'CODING',
-          description: 'This test evaluates a candidate\'s JavaScript programming skills.',
-          duration: 90,
-          totalMarks: 100,
-          passingMarks: 60,
-          createdBy: 'admin',
-          createdAt: new Date().toISOString()
-        });
-        
-        // Placeholder problem
-        setProblems([
-          createEmptyProblem(),
-        ]);
-      } catch (error) {
-        console.error('Error fetching test data:', error);
-        setError('Failed to load test details. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchTestData();
-  }, [id]);
-
-  const createEmptyProblem = () => ({
-    id: `temp-${Date.now()}`,
-    title: '',
-    description: '',
-    difficulty: 'MEDIUM',
-    marks: 25,
-    timeLimit: 30,
-    memoryLimit: 256,
-    testCases: [
-      { input: '', expectedOutput: '', isHidden: false }
-    ],
-    sampleCode: {
-      javascript: '// Your JavaScript solution here\n\nfunction solve(input) {\n  // Write your code here\n  \n  return result;\n}'
-    }
+  const [expandedSections, setExpandedSections] = useState({
+    examples: true,
+    testCases: true,
+    constraints: true,
+    solution: true
   });
 
-  const addProblem = () => {
-    setProblems([...problems, createEmptyProblem()]);
+  const toggleSection = (section) => {
+    setExpandedSections({
+      ...expandedSections,
+      [section]: !expandedSections[section]
+    });
   };
 
-  const removeProblem = (index) => {
-    if (problems.length <= 1) {
-      setError('Test must have at least one problem');
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCodingTest({
+      ...codingTest,
+      [name]: value
+    });
+  };
+
+  const handleSave = async () => {
+    // Validate
+    if (!codingTest.title.trim()) {
+      setError('Title is required');
       return;
     }
-    
-    const newProblems = [...problems];
-    newProblems.splice(index, 1);
-    setProblems(newProblems);
-  };
 
-  const updateProblem = (index, updatedProblem) => {
-    const newProblems = [...problems];
-    newProblems[index] = updatedProblem;
-    setProblems(newProblems);
-  };
-
-  const handleSaveTest = async () => {
-    // Validate all problems
-    const invalidProblems = problems.filter(p => !p.title.trim() || !p.description.trim());
-    
-    if (invalidProblems.length > 0) {
-      setError('Please fill in all required fields for each problem');
+    if (!codingTest.description.trim()) {
+      setError('Description is required');
       return;
     }
-    
-    setSaving(true);
+
+    if (codingTest.examples.some(ex => !ex.input.trim() || !ex.output.trim())) {
+      setError('All examples must have both input and output');
+      return;
+    }
+
+    if (codingTest.testCases.some(tc => !tc.input.trim() || !tc.output.trim())) {
+      setError('All test cases must have both input and output');
+      return;
+    }
+
+    if (codingTest.constraints.some(c => !c.trim())) {
+      setError('Constraints cannot be empty');
+      return;
+    }
+
     setError('');
-    setSuccess('');
-    
+    setSaving(true);
+
     try {
-      // In a real app, you would save the problems to the backend
-      // For demo purposes, we'll just simulate a successful save
+      const savedTest = await createCodingTest(codingTest);
+      setSuccess('Coding test created successfully!');
+      
+      // Update the parent test with the coding test ID
+      await fetch(`http://localhost:8080/api/tests/${id}/update-questions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questionIds: [savedTest.id] }),
+      });
+
+      // Navigate back to tests list after successful save
       setTimeout(() => {
-        setSuccess('All problems saved successfully!');
-        setSaving(false);
+        navigate('/admin/tests');
       }, 1500);
-    } catch (error) {
-      console.error('Error saving problems:', error);
-      setError('Failed to save problems. Please try again.');
+    } catch (err) {
+      console.error('Error saving coding test:', err);
+      setError('Failed to save coding test. Please try again.');
+    } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto pb-12 mt-12">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{testDetails.testName}</h1>
-          <p className="text-gray-500">Build your coding test by adding problems</p>
+          <h1 className="text-2xl font-bold text-gray-800">Create Coding Question</h1>
+          <p className="text-gray-500">Add a new coding question to your test</p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={() => navigate('/admin/tests')}
@@ -138,7 +120,7 @@ const CodingTestBuilder = () => {
           </button>
           
           <button
-            onClick={handleSaveTest}
+            onClick={handleSave}
             disabled={saving}
             className={`px-6 py-2 bg-blue-600 text-white rounded-md flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
               saving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
@@ -146,37 +128,16 @@ const CodingTestBuilder = () => {
           >
             {saving ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
                 Saving...
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Test
+                Save Question
               </>
             )}
           </button>
-        </div>
-      </div>
-      
-      {/* Test metadata */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <span className="text-sm text-green-700 font-medium">Duration:</span>
-            <span className="ml-2 text-green-900">{testDetails.duration} minutes</span>
-          </div>
-          <div>
-            <span className="text-sm text-green-700 font-medium">Total Marks:</span>
-            <span className="ml-2 text-green-900">{testDetails.totalMarks}</span>
-          </div>
-          <div>
-            <span className="text-sm text-green-700 font-medium">Passing Marks:</span>
-            <span className="ml-2 text-green-900">{testDetails.passingMarks}</span>
-          </div>
         </div>
       </div>
       
@@ -207,190 +168,164 @@ const CodingTestBuilder = () => {
         </div>
       )}
       
-      {/* Problems */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-800">Problems ({problems.length})</h2>
-          <div className="text-sm text-gray-500">
-            Total marks: {problems.reduce((sum, p) => sum + (parseInt(p.marks) || 0), 0)}
+      {/* Main form */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="p-6 space-y-6">
+          {/* Basic details */}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Title *
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={codingTest.title}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter question title"
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description *
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={codingTest.description}
+                onChange={handleInputChange}
+                rows="4"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Describe the coding problem in detail"
+                required
+              ></textarea>
+            </div>
+            
+            <div>
+              <label htmlFor="marks" className="block text-sm font-medium text-gray-700 mb-1">
+                Marks *
+              </label>
+              <input
+                type="number"
+                id="marks"
+                name="marks"
+                value={codingTest.marks}
+                onChange={handleInputChange}
+                min="1"
+                className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
           </div>
-        </div>
-        
-        {problems.map((problem, index) => (
-          <div key={problem.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-              <div className="font-medium">Problem {index + 1}</div>
-              <button 
-                onClick={() => removeProblem(index)}
-                className="p-1 rounded-full text-red-500 hover:bg-red-50"
-                title="Remove Problem"
-              >
-                <Trash2 className="w-5 h-5" />
+          
+          {/* Examples section */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div 
+              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+              onClick={() => toggleSection('examples')}
+            >
+              <div className="font-medium flex items-center">
+                <span className="mr-2">Examples</span>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {codingTest.examples.length}
+                </span>
+              </div>
+              <button className="p-1 text-gray-500">
+                {expandedSections.examples ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
             </div>
             
-            <div className="p-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor={`title-${problem.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                    Problem Title *
-                  </label>
-                  <input
-                    type="text"
-                    id={`title-${problem.id}`}
-                    value={problem.title}
-                    onChange={(e) => updateProblem(index, { ...problem, title: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter problem title"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor={`difficulty-${problem.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                    Difficulty Level
-                  </label>
-                  <select
-                    id={`difficulty-${problem.id}`}
-                    value={problem.difficulty}
-                    onChange={(e) => updateProblem(index, { ...problem, difficulty: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="EASY">Easy</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HARD">Hard</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor={`description-${problem.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                  Problem Description *
-                </label>
-                <textarea
-                  id={`description-${problem.id}`}
-                  value={problem.description}
-                  onChange={(e) => updateProblem(index, { ...problem, description: e.target.value })}
-                  rows="4"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Describe the problem in detail"
-                  required
-                ></textarea>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor={`marks-${problem.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                    Marks *
-                  </label>
-                  <input
-                    type="number"
-                    id={`marks-${problem.id}`}
-                    value={problem.marks}
-                    onChange={(e) => updateProblem(index, { ...problem, marks: parseInt(e.target.value) || 0 })}
-                    min="1"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor={`timeLimit-${problem.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                    Time Limit (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    id={`timeLimit-${problem.id}`}
-                    value={problem.timeLimit}
-                    onChange={(e) => updateProblem(index, { ...problem, timeLimit: parseInt(e.target.value) || 0 })}
-                    min="1"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor={`memoryLimit-${problem.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                    Memory Limit (MB)
-                  </label>
-                  <input
-                    type="number"
-                    id={`memoryLimit-${problem.id}`}
-                    value={problem.memoryLimit}
-                    onChange={(e) => updateProblem(index, { ...problem, memoryLimit: parseInt(e.target.value) || 0 })}
-                    min="1"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Test Cases</h3>
-                <div className="space-y-3 border border-gray-200 rounded-lg p-3">
-                  {problem.testCases.map((testCase, tcIndex) => (
-                    <div key={tcIndex} className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-3 border-b border-gray-100">
-                      <div>
-                        <label htmlFor={`input-${problem.id}-${tcIndex}`} className="block text-xs font-medium text-gray-600 mb-1">
-                          Input
-                        </label>
-                        <textarea
-                          id={`input-${problem.id}-${tcIndex}`}
-                          value={testCase.input}
-                          onChange={(e) => {
-                            const newTestCases = [...problem.testCases];
-                            newTestCases[tcIndex] = { ...testCase, input: e.target.value };
-                            updateProblem(index, { ...problem, testCases: newTestCases });
-                          }}
-                          rows="2"
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                          placeholder="Test case input"
-                        ></textarea>
-                      </div>
-                      
-                      <div>
-                        <label htmlFor={`output-${problem.id}-${tcIndex}`} className="block text-xs font-medium text-gray-600 mb-1">
-                          Expected Output
-                        </label>
-                        <textarea
-                          id={`output-${problem.id}-${tcIndex}`}
-                          value={testCase.expectedOutput}
-                          onChange={(e) => {
-                            const newTestCases = [...problem.testCases];
-                            newTestCases[tcIndex] = { ...testCase, expectedOutput: e.target.value };
-                            updateProblem(index, { ...problem, testCases: newTestCases });
-                          }}
-                          rows="2"
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                          placeholder="Expected output"
-                        ></textarea>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newTestCases = [...problem.testCases, { input: '', expectedOutput: '', isHidden: false }];
-                      updateProblem(index, { ...problem, testCases: newTestCases });
-                    }}
-                    className="flex items-center text-sm text-blue-600 hover:text-blue-800 mt-2"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Test Case
-                  </button>
-                </div>
-              </div>
-            </div>
+            {expandedSections.examples && (
+              <ExampleSection
+                examples={codingTest.examples}
+                onChange={(examples) => setCodingTest({ ...codingTest, examples })}
+              />
+            )}
           </div>
-        ))}
-        
-        <div className="flex justify-center">
-          <button
-            onClick={addProblem}
-            className="flex items-center px-4 py-2 border border-blue-300 rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Problem
-          </button>
+          
+          {/* Test Cases section */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div 
+              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+              onClick={() => toggleSection('testCases')}
+            >
+              <div className="font-medium flex items-center">
+                <span className="mr-2">Test Cases</span>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {codingTest.testCases.length}
+                </span>
+              </div>
+              <button className="p-1 text-gray-500">
+                {expandedSections.testCases ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+            
+            {expandedSections.testCases && (
+              <TestCaseSection
+                testCases={codingTest.testCases}
+                onChange={(testCases) => setCodingTest({ ...codingTest, testCases })}
+              />
+            )}
+          </div>
+          
+          {/* Constraints section */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div 
+              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+              onClick={() => toggleSection('constraints')}
+            >
+              <div className="font-medium flex items-center">
+                <span className="mr-2">Constraints</span>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {codingTest.constraints.length}
+                </span>
+              </div>
+              <button className="p-1 text-gray-500">
+                {expandedSections.constraints ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+            
+            {expandedSections.constraints && (
+              <ConstraintsSection
+                constraints={codingTest.constraints}
+                onChange={(constraints) => setCodingTest({ ...codingTest, constraints })}
+              />
+            )}
+          </div>
+          
+          {/* Solution section */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div 
+              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+              onClick={() => toggleSection('solution')}
+            >
+              <div className="font-medium flex items-center">
+                <Code className="w-4 h-4 mr-1" />
+                <span>Solution Code</span>
+              </div>
+              <button className="p-1 text-gray-500">
+                {expandedSections.solution ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+            
+            {expandedSections.solution && (
+              <div className="p-4">
+                <CodeEditor
+                  value={codingTest.solution}
+                  onChange={(code) => setCodingTest({ ...codingTest, solution: code })}
+                  language="javascript"
+                  height="250px"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  Provide a model solution for this coding problem.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -179,7 +179,7 @@ const TestsList = () => {
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                           <GitPullRequest className="w-3 h-3 mr-1" />
-                          Aptitude
+                          {test.testType}
                         </span>
                       )}
                     </td>
@@ -191,13 +191,13 @@ const TestsList = () => {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <Link 
-                          to={`/admin/tests/${test.id}`}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
-                          title="View Test"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </Link>
+                          <Link 
+                            to={`/admin/tests/${test.id}`}
+                            className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
+                            title="View Test"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </Link>
                         <Link 
                           to={`/admin/tests/${test.id}/edit`}
                           className="text-amber-600 hover:text-amber-900 p-1 rounded-full hover:bg-amber-50 transition-colors duration-200"
