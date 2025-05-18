@@ -11,7 +11,7 @@ const CodingTestBuilder = () => {
   const { id } = useParams(); // This is the parent test ID
   const navigate = useNavigate();
 
-  const [codingTest, setCodingTest] = useState({
+  const createEmptyQuestion = () => ({
     title: '',
     description: '',
     examples: [{ input: '', output: '' }],
@@ -22,6 +22,9 @@ const CodingTestBuilder = () => {
     createdBy: 'admin',
     testId: id // Store the parent test ID
   });
+
+  const [codingQuestions, setCodingQuestions] = useState([createEmptyQuestion()]);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -42,36 +45,79 @@ const CodingTestBuilder = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setCodingTest({
-      ...codingTest,
-      [name]: value
+    
+    setCodingQuestions(prevQuestions => {
+      const updatedQuestions = [...prevQuestions];
+      updatedQuestions[activeQuestionIndex] = {
+        ...updatedQuestions[activeQuestionIndex],
+        [name]: value
+      };
+      return updatedQuestions;
     });
   };
 
+  const handleAddQuestion = () => {
+    setCodingQuestions(prevQuestions => [...prevQuestions, createEmptyQuestion()]);
+    setActiveQuestionIndex(codingQuestions.length);
+  };
+
+  const handleRemoveQuestion = (indexToRemove) => {
+    if (codingQuestions.length === 1) {
+      setError('At least one question is required');
+      return;
+    }
+
+    setCodingQuestions(prevQuestions => 
+      prevQuestions.filter((_, index) => index !== indexToRemove)
+    );
+
+    // Adjust active index if needed
+    if (activeQuestionIndex >= indexToRemove && activeQuestionIndex > 0) {
+      setActiveQuestionIndex(activeQuestionIndex - 1);
+    }
+  };
+
+  const validateQuestions = () => {
+    for (let i = 0; i < codingQuestions.length; i++) {
+      const question = codingQuestions[i];
+      
+      if (!question.title.trim()) {
+        setError(`Question ${i + 1}: Title is required`);
+        setActiveQuestionIndex(i);
+        return false;
+      }
+
+      if (!question.description.trim()) {
+        setError(`Question ${i + 1}: Description is required`);
+        setActiveQuestionIndex(i);
+        return false;
+      }
+
+      if (question.examples.some(ex => !ex.input.trim() || !ex.output.trim())) {
+        setError(`Question ${i + 1}: All examples must have both input and output`);
+        setActiveQuestionIndex(i);
+        return false;
+      }
+
+      if (question.testCases.some(tc => !tc.input.trim() || !tc.output.trim())) {
+        setError(`Question ${i + 1}: All test cases must have both input and output`);
+        setActiveQuestionIndex(i);
+        return false;
+      }
+
+      if (question.constraints.some(c => !c.trim())) {
+        setError(`Question ${i + 1}: Constraints cannot be empty`);
+        setActiveQuestionIndex(i);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
-    // Validate
-    if (!codingTest.title.trim()) {
-      setError('Title is required');
-      return;
-    }
-
-    if (!codingTest.description.trim()) {
-      setError('Description is required');
-      return;
-    }
-
-    if (codingTest.examples.some(ex => !ex.input.trim() || !ex.output.trim())) {
-      setError('All examples must have both input and output');
-      return;
-    }
-
-    if (codingTest.testCases.some(tc => !tc.input.trim() || !tc.output.trim())) {
-      setError('All test cases must have both input and output');
-      return;
-    }
-
-    if (codingTest.constraints.some(c => !c.trim())) {
-      setError('Constraints cannot be empty');
+    // Validate all questions
+    if (!validateQuestions()) {
       return;
     }
 
@@ -79,36 +125,44 @@ const CodingTestBuilder = () => {
     setSaving(true);
 
     try {
-      const savedTest = await createCodingTest(codingTest);
-      setSuccess('Coding test created successfully!');
+      // Save all questions
+      const savedQuestionIds = [];
+      for (const question of codingQuestions) {
+        const savedQuestion = await createCodingTest(question);
+        savedQuestionIds.push(savedQuestion.id);
+      }
       
-      // Update the parent test with the coding test ID
+      // Update the parent test with all coding test IDs
       await fetch(`http://localhost:8080/api/tests/${id}/update-questions`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ questionIds: [savedTest.id] }),
+        body: JSON.stringify({ questionIds: savedQuestionIds }),
       });
 
+      setSuccess(`Successfully saved ${codingQuestions.length} coding question${codingQuestions.length > 1 ? 's' : ''}!`);
+      
       // Navigate back to tests list after successful save
       setTimeout(() => {
         navigate('/admin/tests');
       }, 1500);
     } catch (err) {
-      console.error('Error saving coding test:', err);
-      setError('Failed to save coding test. Please try again.');
+      console.error('Error saving coding tests:', err);
+      setError('Failed to save coding tests. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
+  const activeQuestion = codingQuestions[activeQuestionIndex];
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12 mt-12">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Create Coding Question</h1>
-          <p className="text-gray-500">Add a new coding question to your test</p>
+          <h1 className="text-2xl font-bold text-gray-800">Create Coding Questions</h1>
+          <p className="text-gray-500">Add coding questions to your test</p>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -134,7 +188,7 @@ const CodingTestBuilder = () => {
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Question
+                Save Questions
               </>
             )}
           </button>
@@ -167,9 +221,46 @@ const CodingTestBuilder = () => {
           </button>
         </div>
       )}
-      
-      {/* Main form */}
+
+      {/* Question navigation tabs */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200">
+          <div className="px-4 py-3 flex items-center space-x-1 overflow-x-auto">
+            {codingQuestions.map((question, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveQuestionIndex(index)}
+                className={`px-4 py-2 rounded-t-lg flex items-center ${
+                  activeQuestionIndex === index 
+                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500 font-medium' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span>Question {index + 1}</span>
+                {codingQuestions.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveQuestion(index);
+                    }}
+                    className="ml-2 p-1 rounded-full hover:bg-red-100 hover:text-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </button>
+            ))}
+            <button
+              onClick={handleAddQuestion}
+              className="px-3 py-2 rounded-md flex items-center text-blue-600 hover:bg-blue-50"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Question
+            </button>
+          </div>
+        </div>
+
+        {/* Main form */}
         <div className="p-6 space-y-6">
           {/* Basic details */}
           <div className="space-y-4">
@@ -181,7 +272,7 @@ const CodingTestBuilder = () => {
                 type="text"
                 id="title"
                 name="title"
-                value={codingTest.title}
+                value={activeQuestion.title}
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter question title"
@@ -196,7 +287,7 @@ const CodingTestBuilder = () => {
               <textarea
                 id="description"
                 name="description"
-                value={codingTest.description}
+                value={activeQuestion.description}
                 onChange={handleInputChange}
                 rows="4"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -213,7 +304,7 @@ const CodingTestBuilder = () => {
                 type="number"
                 id="marks"
                 name="marks"
-                value={codingTest.marks}
+                value={activeQuestion.marks}
                 onChange={handleInputChange}
                 min="1"
                 className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -231,7 +322,7 @@ const CodingTestBuilder = () => {
               <div className="font-medium flex items-center">
                 <span className="mr-2">Examples</span>
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {codingTest.examples.length}
+                  {activeQuestion.examples.length}
                 </span>
               </div>
               <button className="p-1 text-gray-500">
@@ -241,8 +332,17 @@ const CodingTestBuilder = () => {
             
             {expandedSections.examples && (
               <ExampleSection
-                examples={codingTest.examples}
-                onChange={(examples) => setCodingTest({ ...codingTest, examples })}
+                examples={activeQuestion.examples}
+                onChange={(examples) => {
+                  setCodingQuestions(prevQuestions => {
+                    const updatedQuestions = [...prevQuestions];
+                    updatedQuestions[activeQuestionIndex] = {
+                      ...updatedQuestions[activeQuestionIndex],
+                      examples
+                    };
+                    return updatedQuestions;
+                  });
+                }}
               />
             )}
           </div>
@@ -256,7 +356,7 @@ const CodingTestBuilder = () => {
               <div className="font-medium flex items-center">
                 <span className="mr-2">Test Cases</span>
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {codingTest.testCases.length}
+                  {activeQuestion.testCases.length}
                 </span>
               </div>
               <button className="p-1 text-gray-500">
@@ -266,8 +366,17 @@ const CodingTestBuilder = () => {
             
             {expandedSections.testCases && (
               <TestCaseSection
-                testCases={codingTest.testCases}
-                onChange={(testCases) => setCodingTest({ ...codingTest, testCases })}
+                testCases={activeQuestion.testCases}
+                onChange={(testCases) => {
+                  setCodingQuestions(prevQuestions => {
+                    const updatedQuestions = [...prevQuestions];
+                    updatedQuestions[activeQuestionIndex] = {
+                      ...updatedQuestions[activeQuestionIndex],
+                      testCases
+                    };
+                    return updatedQuestions;
+                  });
+                }}
               />
             )}
           </div>
@@ -281,7 +390,7 @@ const CodingTestBuilder = () => {
               <div className="font-medium flex items-center">
                 <span className="mr-2">Constraints</span>
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {codingTest.constraints.length}
+                  {activeQuestion.constraints.length}
                 </span>
               </div>
               <button className="p-1 text-gray-500">
@@ -291,8 +400,17 @@ const CodingTestBuilder = () => {
             
             {expandedSections.constraints && (
               <ConstraintsSection
-                constraints={codingTest.constraints}
-                onChange={(constraints) => setCodingTest({ ...codingTest, constraints })}
+                constraints={activeQuestion.constraints}
+                onChange={(constraints) => {
+                  setCodingQuestions(prevQuestions => {
+                    const updatedQuestions = [...prevQuestions];
+                    updatedQuestions[activeQuestionIndex] = {
+                      ...updatedQuestions[activeQuestionIndex],
+                      constraints
+                    };
+                    return updatedQuestions;
+                  });
+                }}
               />
             )}
           </div>
@@ -315,8 +433,17 @@ const CodingTestBuilder = () => {
             {expandedSections.solution && (
               <div className="p-4">
                 <CodeEditor
-                  value={codingTest.solution}
-                  onChange={(code) => setCodingTest({ ...codingTest, solution: code })}
+                  value={activeQuestion.solution}
+                  onChange={(code) => {
+                    setCodingQuestions(prevQuestions => {
+                      const updatedQuestions = [...prevQuestions];
+                      updatedQuestions[activeQuestionIndex] = {
+                        ...updatedQuestions[activeQuestionIndex],
+                        solution: code
+                      };
+                      return updatedQuestions;
+                    });
+                  }}
                   language="javascript"
                   height="250px"
                 />

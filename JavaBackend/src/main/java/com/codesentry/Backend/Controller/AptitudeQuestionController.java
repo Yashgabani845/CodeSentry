@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/aptitude-questions")
 public class AptitudeQuestionController {
@@ -15,7 +14,6 @@ public class AptitudeQuestionController {
     @Autowired
     private AptitudeQuestionRepository aptitudeQuestionRepository;
 
-    // Create a new aptitude question
     @PostMapping("/add")
     public AptitudeQuestion addQuestion(@RequestBody AptitudeQuestion question) {
         if (question.getQuestionText() == null || question.getOptions() == null || 
@@ -25,18 +23,27 @@ public class AptitudeQuestionController {
         return aptitudeQuestionRepository.save(question);
     }
 
-    // Get all aptitude questions
     @GetMapping("/all")
     public List<AptitudeQuestion> getAllQuestions() {
         return aptitudeQuestionRepository.findAll();
     }
 
-    // Get question by ID
     @GetMapping("/{id}")
     public AptitudeQuestion getQuestionById(@PathVariable String id) {
         return aptitudeQuestionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Question not found"));
     }
 
-    
+    @PutMapping("/{id}")
+    public AptitudeQuestion updateQuestion(@PathVariable String id, @RequestBody AptitudeQuestion questionDetails) {
+        return aptitudeQuestionRepository.findById(id)
+            .map(question -> {
+                question.setQuestionText(questionDetails.getQuestionText());
+                question.setOptions(questionDetails.getOptions());
+                question.setCorrectAnswer(questionDetails.getCorrectAnswer());
+                question.setMarks(questionDetails.getMarks());
+                return aptitudeQuestionRepository.save(question);
+            })
+            .orElseThrow(() -> new RuntimeException("Question not found"));
+    }
 }
