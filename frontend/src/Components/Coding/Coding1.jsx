@@ -3,6 +3,65 @@ import { ChevronLeft, ChevronRight, Play, Send, LogOut, Maximize2, Minimize2, Li
 import MonacoEditorWrapper from './MonaccoWrapper';
 import TestCaseResult from './TestcaseResults';
 import Timer from './Timer';
+const problems = [
+  {
+    id: 1,number: 1,title: "Two Sum", marks: 25, description: `
+      Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
+      You may assume that each input would have exactly one solution, and you may not use the same element twice.
+      You can return the answer in any order.
+    `,  testCases: [ {
+        input: "nums = [2,7,11,15], target = 9",
+        output: "[0,1]"
+      }, {
+        input: "nums = [3,2,4], target = 6",
+        output: "[1,2]"
+      }, {
+        input: "nums = [3,3], target = 6",
+        output: "[0,1]"   }  ],
+    constraints: [
+      "2 <= nums.length <= 10^4",
+      "-10^9 <= nums[i] <= 10^9",
+      "-10^9 <= target <= 10^9",
+      "Only one valid answer exists."
+    ],
+    startingCode: {
+      javascript: "/**\n * @param {number[]} nums\n * @param {number} target\n * @return {number[]}\n */\nvar twoSum = function(nums, target) {\n    \n};"
+    }
+  },
+  {
+    id: 2,
+    number: 2,
+    title: "Valid Palindrome",
+    marks: 20,
+    description: `
+      A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward. Alphanumeric characters include letters and numbers.
+      
+      Given a string s, return true if it is a palindrome, or false otherwise.
+   
+    `,
+    testCases: [
+      {
+        input: 's = "A man, a plan, a canal: Panama"',
+        output: "true"
+      },
+      {
+        input: 's = "race a car"',
+        output: "false"
+      },
+      {
+        input: 's = " "',
+        output: "true"
+      }
+    ],
+    constraints: [
+      "1 <= s.length <= 2 * 10^5",
+      "s consists only of printable ASCII characters."
+    ],
+    startingCode: {
+      javascript: "/**\n * @param {string} s\n * @return {boolean}\n */\nvar isPalindrome = function(s) {\n    \n};"
+    }
+  }
+];
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
@@ -11,7 +70,6 @@ const languages = [
   { value: "cpp", label: "C++" },
   { value: "typescript", label: "TypeScript" }
 ];
-
 
 const defaultCode = {
   javascript: "// Write your JavaScript code here\n\n",
@@ -31,89 +89,33 @@ const CodingEnvironment = () => {
   const [testResults, setTestResults] = useState([]);
   const [theme, setTheme] = useState("vs-dark");
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [problems, setProblems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
+  // Refs for resizable panels
   const leftPanelRef = useRef(null);
   const monacoRef = useRef(null);
+
   const rightPanelRef = useRef(null);
   const resultsPanelRef = useRef(null);
   const editorContainerRef = useRef(null);
   const resizeLeftRef = useRef(null);
   const resizeRightRef = useRef(null);
 
+  // Current problem
+  const currentProblem = problems[currentProblemIndex];
   // Handle editor value change
   const handleEditorChange = (value) => {
     setCode(value);
   };
 
-  // Fetch problems on component mount
+  // Initialize code when language or problem changes
   useEffect(() => {
-    const fetchTestAndQuestions = async () => {
-      setIsLoading(true);
-      try {
-        console.log("⏳ Fetching test...");
-        const testId = "6829427210beb4296f269900"; 
-        const testResponse = await fetch(`http://localhost:8080/api/tests/${testId}`);
-        
-        if (!testResponse.ok) {
-          throw new Error(`HTTP error! Status: ${testResponse.status}`);
-        }
-        
-        const test = await testResponse.json();
-        console.log("✅ Test fetched:", test);
-  
-        if (test && test.testType === "CODING" && Array.isArray(test.questionIds)) {
-          const questionPromises = test.questionIds.map(id =>
-            fetch(`http://localhost:8080/api/coding-tests/${id}`)
-              .then(res => {
-                if (!res.ok) {
-                  throw new Error(`HTTP error! Status: ${res.status} for question ID: ${id}`);
-                }
-                return res.json();
-              })
-          );
-          
-          const questions = await Promise.all(questionPromises);
-          console.log("✅ Questions fetched:", questions);
-  
-          const numberedQuestions = questions.map((q, index) => ({
-            ...q,
-            number: index + 1,
-            startingCode: defaultCode, // This is correct as each question uses the entire defaultCode object
-          }));
-          
-          console.log("📦 Setting problems:", numberedQuestions);
-          setProblems(numberedQuestions);
-        } else {
-          throw new Error("Invalid test data structure");
-        }
-      } catch (err) {
-        console.error("❌ Error in useEffect:", err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    fetchTestAndQuestions();
-  }, []);
-
-  // Debug logging for component state
-  useEffect(() => {
-    console.log("✅ Problems state updated:", problems);
-  }, [problems]);
-
-  // Set current problem's code when language changes or problem changes
-  useEffect(() => {
-    if (problems.length > 0 && problems[currentProblemIndex]) {
-      // Use the proper starting code for the selected language
+    if (currentProblem.startingCode && currentProblem.startingCode[language]) {
+      setCode(currentProblem.startingCode[language]);
+    } else {
       setCode(defaultCode[language]);
     }
-  }, [language, currentProblemIndex, problems]);
-  const currentProblem = problems[currentProblemIndex];
+  }, [language, currentProblemIndex]);
 
+  // Handle language change
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
     setIsLanguageDropdownOpen(false);
@@ -143,12 +145,6 @@ const CodingEnvironment = () => {
 
   // Handle run code
   const handleRunCode = () => {
-    const currentProblem = problems[currentProblemIndex];
-    if (!currentProblem || !currentProblem.testCases) {
-      console.error("No test cases available");
-      return;
-    }
-
     // Simulate code execution with dummy results
     const results = currentProblem.testCases.map((testCase, index) => {
       // Simulating execution results - in a real app this would execute the code
@@ -169,8 +165,6 @@ const CodingEnvironment = () => {
     handleRunCode();
     // Add submission logic here
   };
-
- 
   function debounce(func, delay) {
     let timeout;
     return (...args) => {
@@ -178,15 +172,11 @@ const CodingEnvironment = () => {
       timeout = setTimeout(() => func(...args), delay);
     };
   }
-
   const debouncedLayout = useRef(
     debounce(() => {
-      if (monacoRef.current) {
-        monacoRef.current.layout();
-      }
+      monacoRef.current?.layout();
     }, 100)
-  ).current;
-
+  );
   // Setup resize handlers for panels
   useEffect(() => {
     const handleLeftResize = (e) => {
@@ -274,53 +264,11 @@ const CodingEnvironment = () => {
       highlight: isDarkMode ? 'bg-gray-700' : 'bg-gray-200',
       resizer: isDarkMode ? 'bg-gray-700 hover:bg-blue-500' : 'bg-gray-300 hover:bg-blue-400',
     };
-
   };
+
   const themeClasses = getThemeClasses();
 
-  if (isLoading) {
-    return (
-      <div className={`flex items-center justify-center min-h-screen ${themeClasses.background} ${themeClasses.text}`}>
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
-            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
-          </div>
-          <p className="mt-4">Loading coding environment...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className={`flex items-center justify-center min-h-screen ${themeClasses.background} ${themeClasses.text}`}>
-        <div className="text-center max-w-md p-4">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold mb-2">Error Loading Data</h2>
-          <p className="mb-4">{error}</p>
-          <p className="text-sm">Please check your Internet  connection and try again.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle case where problems haven't loaded yet
-  if (problems.length === 0) {
-    return (
-      <div className={`flex items-center justify-center min-h-screen ${themeClasses.background} ${themeClasses.text}`}>
-        <div className="text-center max-w-md p-4">
-          <h2 className="text-xl font-bold mb-2">No Problems Available</h2>
-          <p>No coding problems were found. Please ensure your profile is configured correctly.</p>
-        </div>
-      </div>
-    );
-  }
-
- 
   return (
-   
-
 <div className={`flex flex-col h-screen ${themeClasses.background} ${themeClasses.text} rounded-sm`}>
 {/* Navbar */}
       <div className={`${themeClasses.navbar} border-b p-3 flex items-center justify-between`}>
@@ -445,7 +393,7 @@ const CodingEnvironment = () => {
             <div className="flex-1 overflow-y-auto p-4">
               <div className="flex justify-between items-center mb-4">
                 <h1 className="text-xl font-bold">
-                  {currentProblem.number }. {currentProblem.title}
+                  {currentProblem.number}. {currentProblem.title}
                 </h1>
                 <span className="text-blue-500 font-medium">{currentProblem.marks} marks</span>
               </div>
