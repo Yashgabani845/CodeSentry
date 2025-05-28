@@ -16,6 +16,8 @@ import CodingEnvironment from './Components/Coding/Coding';
 import EditTest from './Components/AdminDashboard/EditTest';
 import EditAptitudeTest from './Components/AdminDashboard/EditAptitudeTest';
 import EditCodingTest from './Components/AdminDashboard/EditCodingTest';
+import LiveCam from './Components/Detection/LiveCam';
+import FaceRecognition from './Components/Detection/FaceRecognision';
 function App() {
   return (
     <Router>
@@ -25,6 +27,9 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+        <Route path="/live" element={<LiveCam />} />
+        <Route path="/face" element={<FaceRecognition />} />
+
       <Route path="/admin" element={
         <AdminLayout>
           <Dashboard />
