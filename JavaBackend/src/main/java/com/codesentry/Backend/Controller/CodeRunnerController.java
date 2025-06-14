@@ -13,9 +13,9 @@ public class CodeRunnerController {
         this.pistonService = pistonService;
     }
 
-    @PostMapping("/run")
-public String runCode(@RequestParam String language, @RequestBody CodeRequest request) {
-    return pistonService.runCode(request.getCode(), language);
-}
+//     @PostMapping("/run")
+// public String runCode(@RequestParam String language, @RequestBody CodeRequest request) {
+//     return pistonService.runCode(request.getCode(), language);
+// }
 
 }

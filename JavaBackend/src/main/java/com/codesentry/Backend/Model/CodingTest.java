@@ -11,7 +11,7 @@ public class CodingTest {
     private String title;
     private String description;
     private List<Example> examples;
-    private List<TestCase> testCases;
+    private List<TestCases> testCases;
     private List<String> constraints;
     private int marks;
     private String solution;
@@ -20,7 +20,7 @@ public class CodingTest {
     // Constructors
     public CodingTest() {}
 
-    public CodingTest(String title, String description, List<Example> examples, List<TestCase> testCases, List<String> constraints, int marks, String solution, String createdBy) {
+    public CodingTest(String title, String description, List<Example> examples, List<TestCases> testCases, List<String> constraints, int marks, String solution, String createdBy) {
         this.title = title;
         this.description = description;
         this.examples = examples;
@@ -43,8 +43,8 @@ public class CodingTest {
     public List<Example> getExamples() { return examples; }
     public void setExamples(List<Example> examples) { this.examples = examples; }
 
-    public List<TestCase> getTestCases() { return testCases; }
-    public void setTestCases(List<TestCase> testCases) { this.testCases = testCases; }
+    public List<TestCases> getTestCases() { return testCases; }
+    public void setTestCases(List<TestCases> testCases) { this.testCases = testCases; }
 
     public List<String> getConstraints() { return constraints; }
     public void setConstraints(List<String> constraints) { this.constraints = constraints; }

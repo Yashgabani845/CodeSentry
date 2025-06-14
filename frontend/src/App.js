@@ -23,7 +23,7 @@ function App() {
     <Router>
       <Routes>
       <Route path="/" element={<Homepage />} />
-      <Route path="/code" element={<CodingEnvironment />} />
+      <Route path="/code/:testId" element={<CodingEnvironment />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />

@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Play, Send, LogOut, Maximize2, Minimize2, Li
 import MonacoEditorWrapper from './MonaccoWrapper';
 import TestCaseResult from './TestcaseResults';
 import Timer from './Timer';
+import { useParams } from 'react-router-dom';
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
@@ -42,6 +43,7 @@ const CodingEnvironment = () => {
   const editorContainerRef = useRef(null);
   const resizeLeftRef = useRef(null);
   const resizeRightRef = useRef(null);
+  const {testId} = useParams(); 
 
   // Handle editor value change
   const handleEditorChange = (value) => {
@@ -54,7 +56,6 @@ const CodingEnvironment = () => {
       setIsLoading(true);
       try {
         console.log("⏳ Fetching test...");
-        const testId = "6829427210beb4296f269900"; 
         const testResponse = await fetch(`http://localhost:8080/api/tests/${testId}`);
         
         if (!testResponse.ok) {
@@ -162,15 +163,47 @@ const CodingEnvironment = () => {
 
     setTestResults(results);
   };
-
-  // Handle submit code
-  const handleSubmitCode = () => {
-    // Similar to run but would typically submit to the backend
-    handleRunCode();
-    // Add submission logic here
+  const handleSubmitCode = async () => {
+    const currentProblem = problems[currentProblemIndex];
+    if (!currentProblem) {
+      console.error("No current problem to submit");
+      return;
+    }
+  
+    const payload = {
+      language,
+      code,
+      testId: testId,
+      questionNumber: currentProblemIndex,
+    };
+  
+    try {
+      const response = await fetch("http://localhost:8080/api/submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      console.log("✅ Submission result:", result);
+  
+      // 👇 Save test results
+      setTestResults(result);
+  
+      alert("Code submitted successfully!");
+    } catch (error) {
+      console.error("❌ Submission failed:", error);
+      alert("Failed to submit code");
+    }
   };
-
- 
+  
+  
   function debounce(func, delay) {
     let timeout;
     return (...args) => {

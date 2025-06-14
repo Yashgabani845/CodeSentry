@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, LayoutGrid, Table } from 'lucide-react';
-
 const TestCaseResult = ({ result, idx, isDarkMode }) => {
   const [viewMode, setViewMode] = useState('grid');
-  
+
   const getStatusColors = (passed) => {
     if (passed) {
       return {
@@ -31,7 +30,11 @@ const TestCaseResult = ({ result, idx, isDarkMode }) => {
   const codeBg = isDarkMode ? 'bg-gray-900' : 'bg-gray-100';
   const borderColor = isDarkMode ? 'border-gray-700' : 'border-gray-200';
   const labelColor = isDarkMode ? 'text-gray-300' : 'text-gray-600';
-  const iconBg = isDarkMode ? 'bg-gray-700/50' : 'bg-gray-200/50';
+
+  // 👇 Safely extract test case values
+  const input = result.testCase?.input || result.input || '';
+  const expectedOutput = result.testCase?.output || result.expectedOutput || '';
+  const actualOutput = result.output || result.actualOutput || '';
 
   return (
     <div className={`border rounded-lg overflow-hidden mb-4 shadow-sm ${borderColor} ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
@@ -39,42 +42,40 @@ const TestCaseResult = ({ result, idx, isDarkMode }) => {
         <div className="flex items-center space-x-2">
           {result.passed ? 
             <CheckCircle size={16} className={`${colors.icon}`} /> : 
-            <XCircle size={16} className={`${colors.icon}`} />
-          }
+            <XCircle size={16} className={`${colors.icon}`} />}
           <span className="text-sm font-semibold">Test Case {idx + 1}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.badgeBg} ${colors.badgeText}`}>
-            {result.passed ? 'Passed' : 'Failed'}
-          </span>
-        </div>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.badgeBg} ${colors.badgeText}`}>
+          {result.passed ? 'Passed' : 'Failed'}
+        </span>
       </div>
-      
+
       <div className={`${panelBg} grid grid-cols-3 gap-2 p-3`}>
         <div>
           <span className={`font-medium text-xs ${labelColor} block mb-1`}>Input:</span>
           <div className={`${codeBg} p-2 rounded-md ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} font-mono text-xs overflow-auto max-h-20`}>
-            {result.testCase.input}
+            {input}
           </div>
         </div>
-        
+
         <div>
           <span className={`font-medium text-xs ${labelColor} block mb-1`}>Expected Output:</span>
           <div className={`${codeBg} p-2 rounded-md ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} font-mono text-xs overflow-auto max-h-20`}>
-            {result.testCase.output}
+            {expectedOutput}
           </div>
         </div>
-        
+
         <div>
           <span className={`font-medium text-xs ${labelColor} block mb-1`}>Your Output:</span>
           <div className={`p-2 rounded-md font-mono text-xs overflow-auto max-h-20 ${colors.bg} ${colors.text} border ${colors.border}`}>
-            {result.output}
+            {actualOutput}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 
 
