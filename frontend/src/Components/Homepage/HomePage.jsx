@@ -4,7 +4,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AISection from "./AISection";
 import FeatureSection from "./FeatureSection";
-import CTASection from "./CTASection";
+import Owner from './Owner';
 import HeroSection from './HeroSection';
 const Homepage = () => {
   return (
@@ -13,8 +13,9 @@ const Homepage = () => {
       <main>
         <HeroSection />
         <FeatureSection />
+        <Owner/>
         <AISection />
-        <CTASection />
+      
       </main>
       <Footer />
     </div>
