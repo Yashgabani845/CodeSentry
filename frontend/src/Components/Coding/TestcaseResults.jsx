@@ -75,7 +75,7 @@ const TestCaseResult = ({ result, idx, isDarkMode }) => {
     </div>
   );
 };
-
+  
 
 
 

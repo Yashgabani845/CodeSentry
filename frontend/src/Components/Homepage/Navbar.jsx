@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
+  const location = useLocation();
+const currentPath = location.pathname;
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -49,45 +53,86 @@ const Navbar = () => {
 
         {/* Desktop menu */}
         <div className={`${isMenuOpen ? 'block' : 'hidden'} w-full md:block md:w-auto`}>
-          <ul className="flex flex-col p-4 mt-4 bg-gray-50 rounded-lg border border-gray-100 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium md:border-0 md:bg-white">
-            <li>
-              <a href="/" className="block py-2 pr-4 pl-3 text-primary-700 rounded md:bg-transparent md:p-0 font-semibold" aria-current="page">Home</a>
-            </li>
-            <li>
-              <a href="#features" className="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary-700 md:p-0">Features</a>
-            </li>
-            <li>
-              <a href="#pricing" className="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary-700 md:p-0">Pricing</a>
-            </li>
-            <li>
-              <a href="#about" className="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary-700 md:p-0">About</a>
-            </li>
-            <li>
-              <a href="#contact" className="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary-700 md:p-0">Contact</a>
-            </li>
-            
-            {isLoggedIn ? (
-              <>
-                <li className="md:border-l md:border-gray-200 md:pl-4">
-                  <a href="/profile" className="block py-2 pr-4 pl-3 text-gray-700 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary-700 md:p-0">
-                    <span className="font-medium">{userEmail}</span>
-                  </a>
-                </li>
-                <li>
-                  <button 
-                    onClick={handleLogout}
-                    className="block py-2 pr-4 pl-3 text-red-600 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-red-700 md:p-0"
-                  >
-                    Logout
-                  </button>
-                </li>
-              </>
-            ) : (
-              <li className="md:border-l md:border-gray-200 md:pl-4">
-                <a href="/login" className="block py-2 pr-4 pl-3 text-white bg-primary-600 rounded md:bg-transparent md:text-primary-700 md:p-0 font-medium">Login / Sign Up</a>
-              </li>
-            )}
-          </ul>
+        <ul className="flex flex-col p-4 mt-4 bg-gray-50 rounded-lg border border-gray-100 md:flex-row md:space-x-8 md:mt-0 md:text-sm md:font-medium md:border-0 md:bg-white">
+  <li>
+    <Link
+      to="/"
+      className={`block py-2 pr-4 pl-3 rounded md:p-0 ${
+        currentPath === '/' ? 'text-primary-700 font-semibold' : 'text-gray-700 hover:text-primary-700'
+      }`}
+    >
+      Home
+    </Link>
+  </li>
+
+  <li>
+    <Link
+      to="/about"
+      className={`block py-2 pr-4 pl-3 rounded md:p-0 ${
+        currentPath === '/about' ? 'text-primary-700 font-semibold' : 'text-gray-700 hover:text-primary-700'
+      }`}
+    >
+      About
+    </Link>
+  </li>
+
+  <li>
+    <Link
+      to="/contact"
+      className={`block py-2 pr-4 pl-3 rounded md:p-0 ${
+        currentPath === '/contact' ? 'text-primary-700 font-semibold' : 'text-gray-700 hover:text-primary-700'
+      }`}
+    >
+      Contact
+    </Link>
+  </li>
+
+  <li>
+    <Link
+      to="/owner"
+      className={`block py-2 pr-4 pl-3 rounded md:p-0 ${
+        currentPath === '/owner' ? 'text-primary-700 font-semibold' : 'text-gray-700 hover:text-primary-700'
+      }`}
+    >
+      For Employers
+    </Link>
+  </li>
+
+  {isLoggedIn ? (
+    <>
+      <li className="md:border-l md:border-gray-200 md:pl-4">
+        <Link
+          to="/profile"
+          className={`block py-2 pr-4 pl-3 rounded md:p-0 ${
+            currentPath === '/profile' ? 'text-primary-700 font-semibold' : 'text-gray-700 hover:text-primary-700'
+          }`}
+        >
+          <span className="font-medium">{userEmail}</span>
+        </Link>
+      </li>
+      <li>
+        <button
+          onClick={handleLogout}
+          className="block py-2 pr-4 pl-3 text-red-600 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-red-700 md:p-0"
+        >
+          Logout
+        </button>
+      </li>
+    </>
+  ) : (
+    <li className="md:border-l md:border-gray-200 md:pl-4">
+      <Link
+        to="/login"
+        className={`block py-2 pr-4 pl-3 rounded md:p-0 ${
+          currentPath === '/login' ? 'bg-primary-600 text-white font-medium' : 'text-primary-700 hover:text-primary-800'
+        }`}
+      >
+        Login / Sign Up
+      </Link>
+    </li>
+  )}
+</ul>
+
         </div>
       </div>
     </nav>

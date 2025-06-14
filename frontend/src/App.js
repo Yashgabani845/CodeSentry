@@ -19,12 +19,16 @@ import EditCodingTest from './Components/AdminDashboard/EditCodingTest';
 import LiveCam from './Components/Detection/LiveCam';
 import FaceRecognition from './Components/Detection/FaceRecognision';
 import Landing from './Components/Landing_owner/Landing';
+import ContactUs from './Components/ContactUs/Contactus,';
+import AboutUs from './Components/AboutSection/Aboutus';
 function App() {
   return (
     <Router>
       <Routes>
       <Route path="/" element={<Homepage />} />
       <Route path="/owner" element={<Landing />} />
+      <Route path="/contact" element={<ContactUs />} />
+      <Route path="/about" element={<AboutUs />} />
       <Route path="/code/:testId" element={<CodingEnvironment />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
