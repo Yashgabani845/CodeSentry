@@ -170,11 +170,14 @@ const CodingEnvironment = () => {
       return;
     }
   
+    const userEmail = localStorage.getItem('userEmail'); // ✅ get the userId/email
+  
     const payload = {
       language,
       code,
-      testId: testId,
+      testId,
       questionNumber: currentProblemIndex,
+      userId: userEmail, // ✅ add userId to the payload
     };
   
     try {
@@ -193,8 +196,7 @@ const CodingEnvironment = () => {
       const result = await response.json();
       console.log("✅ Submission result:", result);
   
-      // 👇 Save test results
-      setTestResults(result);
+      setTestResults(result); // 👇 update test result state
   
       alert("Code submitted successfully!");
     } catch (error) {
@@ -202,7 +204,6 @@ const CodingEnvironment = () => {
       alert("Failed to submit code");
     }
   };
-  
   
   function debounce(func, delay) {
     let timeout;
