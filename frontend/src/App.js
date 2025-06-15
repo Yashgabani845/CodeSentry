@@ -21,12 +21,14 @@ import FaceRecognition from './Components/Detection/FaceRecognision';
 import Landing from './Components/Landing_owner/Landing';
 import ContactUs from './Components/ContactUs/Contactus,';
 import AboutUs from './Components/AboutSection/Aboutus';
+import AuthPage from './Components/Company/AuthPage';
 function App() {
   return (
     <Router>
       <Routes>
       <Route path="/" element={<Homepage />} />
       <Route path="/owner" element={<Landing />} />
+      <Route path="/owner/login" element={<AuthPage />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/about" element={<AboutUs />} />
       <Route path="/code/:testId" element={<CodingEnvironment />} />
