@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Play, Send, LogOut, Maximize2, Minimize2, List, Settings, ChevronDown, X, Sun, Moon, CheckCircle, XCircle, AlertTriangle, Power } from 'lucide-react';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import MonacoEditorWrapper from './MonaccoWrapper';
 import TestCaseResult from './TestcaseResults';
 import Timer from './Timer';
@@ -35,7 +38,8 @@ const CodingEnvironment = () => {
   const [problems, setProblems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [isRunning, setIsRunning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const leftPanelRef = useRef(null);
   const monacoRef = useRef(null);
   const rightPanelRef = useRef(null);
@@ -43,7 +47,7 @@ const CodingEnvironment = () => {
   const editorContainerRef = useRef(null);
   const resizeLeftRef = useRef(null);
   const resizeRightRef = useRef(null);
-  const {testId} = useParams(); 
+  const { testId } = useParams();
 
   // Handle editor value change
   const handleEditorChange = (value) => {
@@ -57,14 +61,14 @@ const CodingEnvironment = () => {
       try {
         console.log("⏳ Fetching test...");
         const testResponse = await fetch(`http://localhost:8080/api/tests/${testId}`);
-        
+
         if (!testResponse.ok) {
           throw new Error(`HTTP error! Status: ${testResponse.status}`);
         }
-        
+
         const test = await testResponse.json();
         console.log("✅ Test fetched:", test);
-  
+
         if (test && test.testType === "CODING" && Array.isArray(test.questionIds)) {
           const questionPromises = test.questionIds.map(id =>
             fetch(`http://localhost:8080/api/coding-tests/${id}`)
@@ -75,16 +79,16 @@ const CodingEnvironment = () => {
                 return res.json();
               })
           );
-          
+
           const questions = await Promise.all(questionPromises);
           console.log("✅ Questions fetched:", questions);
-  
+
           const numberedQuestions = questions.map((q, index) => ({
             ...q,
             number: index + 1,
             startingCode: defaultCode, // This is correct as each question uses the entire defaultCode object
           }));
-          
+
           console.log("📦 Setting problems:", numberedQuestions);
           setProblems(numberedQuestions);
         } else {
@@ -97,7 +101,7 @@ const CodingEnvironment = () => {
         setIsLoading(false);
       }
     };
-  
+
     fetchTestAndQuestions();
   }, []);
 
@@ -143,68 +147,99 @@ const CodingEnvironment = () => {
   };
 
   // Handle run code
-  const handleRunCode = () => {
-    const currentProblem = problems[currentProblemIndex];
-    if (!currentProblem || !currentProblem.testCases) {
-      console.error("No test cases available");
-      return;
-    }
-
-    // Simulate code execution with dummy results
-    const results = currentProblem.testCases.map((testCase, index) => {
-      // Simulating execution results - in a real app this would execute the code
-      const isCorrect = Math.random() > 0.3; // randomly determine if test passed for demo
-      return {
-        testCase,
-        passed: isCorrect,
-        output: isCorrect ? testCase.output : "Incorrect output: " + Math.random().toString(36).substring(7)
-      };
-    });
-
-    setTestResults(results);
-  };
-  const handleSubmitCode = async () => {
+  const handleRunCode = async () => {
     const currentProblem = problems[currentProblemIndex];
     if (!currentProblem) {
-      console.error("No current problem to submit");
+      console.error("No current problem to run");
       return;
     }
-  
-    const userEmail = localStorage.getItem('userEmail'); // ✅ get the userId/email
-  
+
+    setIsRunning(true); 
+    const userEmail = localStorage.getItem('userEmail');
+
     const payload = {
       language,
       code,
       testId,
       questionNumber: currentProblemIndex,
-      userId: userEmail, // ✅ add userId to the payload
+      userId: userEmail,
     };
-  
+
     try {
-      const response = await fetch("http://localhost:8080/api/submissions", {
+      const response = await fetch("http://localhost:8080/api/submissions/run", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const result = await response.json();
-      console.log("✅ Submission result:", result);
-  
-      setTestResults(result); // 👇 update test result state
-  
-      alert("Code submitted successfully!");
+      setTestResults(result);
     } catch (error) {
-      console.error("❌ Submission failed:", error);
-      alert("Failed to submit code");
+      console.error("❌ Run failed:", error);
+      toast.error("Failed to run code");
+
+    } finally {
+      setIsRunning(false); // ✅ Stop loader
     }
   };
-  
+
+ const handleSubmitCode = async () => {
+  const currentProblem = problems[currentProblemIndex];
+  if (!currentProblem) {
+    console.error("No current problem to submit");
+    return;
+  }
+
+  const userEmail = localStorage.getItem('userEmail');
+
+  const payload = {
+    language,
+    code,
+    testId,
+    questionNumber: currentProblemIndex,
+    userId: userEmail,
+  };
+
+  setIsSubmitting(true); // show loader if needed
+
+  try {
+    const response = await fetch("http://localhost:8080/api/submissions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    setTestResults(result);
+
+    // ✅ Count how many test cases passed
+    const total = result.length;
+    const passed = result.filter((test) => test.passed).length;
+
+    // ✅ Show toast with result summary
+    alert(`Submitted! ✅ Passed ${passed} / ${total} test cases.`);
+
+  } catch (error) {
+    console.error("❌ Submission failed:", error);
+    toast.error("❌ Failed to submit code");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
   function debounce(func, delay) {
     let timeout;
     return (...args) => {
@@ -351,12 +386,12 @@ const CodingEnvironment = () => {
     );
   }
 
- 
-  return (
-   
 
-<div className={`flex flex-col h-screen ${themeClasses.background} ${themeClasses.text} rounded-sm`}>
-{/* Navbar */}
+  return (
+
+
+    <div className={`flex flex-col h-screen ${themeClasses.background} ${themeClasses.text} rounded-sm`}>
+      {/* Navbar */}
       <div className={`${themeClasses.navbar} border-b p-3 flex items-center justify-between`}>
         <div className="flex items-center space-x-4">
           <div className="text-xl font-bold text-blue-500">CodeSentry Coding Environment</div>
@@ -407,8 +442,8 @@ const CodingEnvironment = () => {
 
           <button
             className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-all duration-200 shadow-sm ${currentProblemIndex === problems.length - 1
-                ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60'
-                : `${themeClasses.primaryButton} text-white hover:shadow-md`
+              ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60'
+              : `${themeClasses.primaryButton} text-white hover:shadow-md`
               }`}
             onClick={handleNextProblem}
             disabled={currentProblemIndex === problems.length - 1}
@@ -479,7 +514,7 @@ const CodingEnvironment = () => {
             <div className="flex-1 overflow-y-auto p-4">
               <div className="flex justify-between items-center mb-4">
                 <h1 className="text-xl font-bold">
-                  {currentProblem.number }. {currentProblem.title}
+                  {currentProblem.number}. {currentProblem.title}
                 </h1>
                 <span className="text-blue-500 font-medium">{currentProblem.marks} marks</span>
               </div>
@@ -571,20 +606,25 @@ const CodingEnvironment = () => {
 
               <div className="flex space-x-3">
                 <button
-                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center space-x-2"
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
                   onClick={handleRunCode}
+                  disabled={isRunning}
                 >
                   <Play size={16} />
-                  <span>Run</span>
+                  <span>{isRunning ? "Running..." : "Run"}</span>
                 </button>
+
                 <button
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center space-x-2"
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
                   onClick={handleSubmitCode}
+                  disabled={isSubmitting}
                 >
                   <Send size={16} />
-                  <span>Submit</span>
+                  <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
                 </button>
+
               </div>
+
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden">
@@ -632,6 +672,7 @@ const CodingEnvironment = () => {
         </div>
       </div>
     </div>
+    
   );
 };
 

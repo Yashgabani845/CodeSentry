@@ -96,5 +96,54 @@ public class SubmissionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
+    @PostMapping("/run")
+public ResponseEntity<?> runCode(@RequestBody SubmissionRequest request) {
+    try {
+        System.out.println("Received Run Request: " + request);
+
+        Test test = testRepository.findById(request.getTestId())
+                .orElseThrow(() -> new RuntimeException("Test not found: " + request.getTestId()));
+
+        String codingTestId = test.getQuestionIds().get(request.getQuestionNumber());
+        CodingTest codingTest = codingTestRepository.findById(codingTestId)
+                .orElseThrow(() -> new RuntimeException("Coding test not found: " + codingTestId));
+
+        List<TestCases> allTestCases = codingTest.getTestCases();
+        List<TestCases> testCasesToRun = allTestCases.size() > 3 ? allTestCases.subList(0, 3) : allTestCases;
+
+        List<TestResult> results = new ArrayList<>();
+        ObjectMapper mapper = new ObjectMapper();
+
+        for (TestCases testCase : testCasesToRun) {
+            String pistonRawResponse = pistonService.runCode(request.getCode(), request.getLanguage(), testCase.getInput());
+
+            String actualOutput;
+            try {
+                JsonNode root = mapper.readTree(pistonRawResponse);
+                actualOutput = root.path("run").path("stdout").asText().trim();
+            } catch (Exception e) {
+                actualOutput = "Error parsing output";
+            }
+
+            boolean passed = actualOutput.equals(testCase.getOutput().trim());
+
+            results.add(new TestResult(
+                testCase.getInput(),
+                testCase.getOutput(),
+                actualOutput,
+                passed
+            ));
+        }
+
+        // ❗ Do not save to DB — only return the results
+        return ResponseEntity.ok(results);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+    }
+}
+
 }
 
