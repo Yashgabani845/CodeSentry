@@ -10,7 +10,7 @@ import { createCodingTest } from '../../Services/CodingTestService';
 const CodingTestBuilder = () => {
   const { id } = useParams(); // This is the parent test ID
   const navigate = useNavigate();
-
+  const user = JSON.parse(localStorage.getItem('user'));
   const createEmptyQuestion = () => ({
     title: '',
     description: '',
@@ -19,7 +19,7 @@ const CodingTestBuilder = () => {
     constraints: [''],
     marks: 25,
     solution: '// Your JavaScript solution here\n\nfunction solve(input) {\n  // Write your code here\n  \n  return result;\n}',
-    createdBy: 'admin',
+    createdBy: user?.id, 
     testId: id // Store the parent test ID
   });
 

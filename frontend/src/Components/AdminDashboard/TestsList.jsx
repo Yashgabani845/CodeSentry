@@ -9,9 +9,14 @@ const TestsList = () => {
   const [filter, setFilter] = useState('ALL');
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'employer') {
+      // Optionally redirect or show error
+      return;
+    }
     const fetchTests = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/tests/all');
+        const response = await fetch(`http://localhost:8080/api/tests/by-user/${user.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch tests');
         }

@@ -69,7 +69,7 @@ const CodingEnvironment = () => {
         const test = await testResponse.json();
         console.log("✅ Test fetched:", test);
 
-        if (test && test.testType === "CODING" && Array.isArray(test.questionIds)) {
+        if (test &&( test.testType === "CODING" || test.testType === "coding") && Array.isArray(test.questionIds)) {
           const questionPromises = test.questionIds.map(id =>
             fetch(`http://localhost:8080/api/coding-tests/${id}`)
               .then(res => {

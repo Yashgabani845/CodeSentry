@@ -94,7 +94,7 @@ const currentPath = location.pathname;
         currentPath === '/owner' ? 'text-primary-700 font-semibold' : 'text-gray-700 hover:text-primary-700'
       }`}
     >
-      For Employers
+      Why Us?
     </Link>
   </li>
 

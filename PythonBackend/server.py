@@ -42,6 +42,7 @@ import numpy as np
 from flask import Flask, request, send_file
 from flask_cors import CORS
 import io
+from PIL import Image
 
 app = Flask(__name__)
 CORS(app)
@@ -84,15 +85,36 @@ reference_face_encoding = None
 @app.route('/enroll', methods=['POST'])
 def enroll():
     global reference_face_encoding
+
     file = request.files['image']
-    image = face_recognition.load_image_file(file)
-    encodings = face_recognition.face_encodings(image)
 
-    if len(encodings) == 0:
-        return "No face found in enrollment image.", 400
+    if not file:
+        return "No image uploaded.", 400
 
-    reference_face_encoding = encodings[0]
-    return "Enrollment successful."
+    try:
+        # Open the image using PIL
+        pil_image = Image.open(file.stream)
+
+        # Ensure image is in RGB mode (not RGBA or CMYK)
+        if pil_image.mode != 'RGB':
+            pil_image = pil_image.convert('RGB')
+
+        # Convert to numpy array (format face_recognition expects)
+        image = np.array(pil_image)
+
+        # Face encodings
+        encodings = face_recognition.face_encodings(image)
+
+        if len(encodings) == 0:
+            return "No face found in enrollment image.", 400
+
+        reference_face_encoding = encodings[0]
+        return "Enrollment successful."
+
+    except Exception as e:
+        return f"Failed to process image: {str(e)}", 500
+
+
 @app.route('/verify', methods=['POST'])
 def verify():
     global reference_face_encoding

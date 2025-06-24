@@ -17,7 +17,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/tests/all');
+        const user = JSON.parse(localStorage.getItem('user'));
+        const response = await fetch(`http://localhost:8080/api/tests/by-user/${user.id}`);
         const tests = await response.json();
         
         // Calculate stats from the fetched data

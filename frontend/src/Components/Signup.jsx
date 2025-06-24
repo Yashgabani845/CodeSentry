@@ -14,6 +14,7 @@ function Signup() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -21,6 +22,7 @@ function Signup() {
       [name]: value,
     }));
   };
+  
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -43,7 +45,14 @@ function Signup() {
   
       const userData = await response.json();
       console.log("Signup successful:", userData);
-      navigate("/login")
+      // After successful signup/login
+      localStorage.setItem('user', JSON.stringify({ id: userData.id, role: userData.role, email: userData.email }));
+      // Conditional redirection based on role
+      if (formData.role === "employer") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {
@@ -177,6 +186,39 @@ function Signup() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Role Selection Field */}
+          <div className="space-y-2">
+            <label htmlFor="role" className="text-sm font-medium text-gray-700">
+              Role
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <select
+                id="role"
+                name="role"
+                required
+                value={formData.role}
+                onChange={handleChange}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 appearance-none bg-white"
+              >
+                <option value="candidate">Candidate</option>
+                <option value="employer">Employer</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.role === "candidate" ? "Looking for job opportunities" : "Hiring and managing tests"}
+            </p>
           </div>
 
           <div>

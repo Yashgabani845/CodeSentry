@@ -11,7 +11,7 @@ const CreateTest = () => {
     duration: 60,
     totalMarks: 100,
     passingMarks: 40,
-    createdBy: 'admin'
+    
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,12 +31,24 @@ const CreateTest = () => {
     setError('');
     
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.id) {
+        setError("You must be logged in to create a test.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Add createdBy to payload
+      const payload = {
+        ...formData,
+        createdBy: user.id
+      };
       const response = await fetch('http://localhost:8080/api/tests/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       
       if (!response.ok) {

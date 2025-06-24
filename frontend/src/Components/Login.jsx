@@ -33,8 +33,14 @@ function Login() {
 
       const userData = await response.json();
       localStorage.setItem('userEmail', email);
+      localStorage.setItem('user', JSON.stringify({ id: userData.id, role: userData.role, email: userData.email }));
       console.log("Login successful:", userData);
-      navigate("/")
+
+      if (userData.role === "employer") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {

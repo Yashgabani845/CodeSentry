@@ -99,4 +99,9 @@ public class TestController {
             return ResponseEntity.badRequest().body("Failed to update test: " + e.getMessage());
         }
     }
+
+    @GetMapping("/by-user/{userId}")
+    public List<Test> getTestsByUserId(@PathVariable String userId) {
+        return testRepository.findByCreatedBy(userId);
+    }
 }
