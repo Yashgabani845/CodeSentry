@@ -39,7 +39,7 @@
 import face_recognition
 import cv2
 import numpy as np
-from flask import Flask, request, send_file
+from flask import Flask, make_response, request, send_file
 from flask_cors import CORS
 import io
 from PIL import Image
@@ -115,42 +115,57 @@ def enroll():
         return f"Failed to process image: {str(e)}", 500
 
 
+
 @app.route('/verify', methods=['POST'])
 def verify():
     global reference_face_encoding
     if reference_face_encoding is None:
-        return "No enrolled face. Please enroll first.", 400
+        resp = make_response("No enrolled face. Please enroll first.", 400)
+        return resp
 
     file = request.files['image']
-    
-    # Read the file only ONCE
     file_bytes = file.read()
-    
+
     # Load for face recognition
     image = face_recognition.load_image_file(io.BytesIO(file_bytes))
     encodings = face_recognition.face_encodings(image)
-
-    if len(encodings) == 0:
-        return '', 204  # No face found
-
-    face_encoding = encodings[0]
-    results = face_recognition.compare_faces([reference_face_encoding], face_encoding, tolerance=0.5)
+    face_locations = face_recognition.face_locations(image)
 
     # Decode image for drawing
     frame = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
 
+    # No face found
+    if len(encodings) == 0 or len(face_locations) == 0:
+        # Just return the original frame with status header
+        _, img_encoded = cv2.imencode('.jpg', frame)
+        response = make_response(img_encoded.tobytes())
+        response.headers.set('Content-Type', 'image/jpeg')
+        response.headers.set('X-Face-Status', 'not_detected')
+        return response
+
+    face_encoding = encodings[0]
+    results = face_recognition.compare_faces([reference_face_encoding], face_encoding, tolerance=0.5)
+
     if results[0]:
-        # Draw green box around the face
-        face_locations = face_recognition.face_locations(image)
-        for top, right, bottom, left in face_locations:
+        # Draw green box around detected faces
+        for (top, right, bottom, left) in face_locations:
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-
-        # Save frame if needed
         cv2.imwrite('matched_face.jpg', frame)
-
-        return "Face matched.", 200
+        _, img_encoded = cv2.imencode('.jpg', frame)
+        response = make_response(img_encoded.tobytes())
+        response.headers.set('Content-Type', 'image/jpeg')
+        response.headers.set('X-Face-Status', 'matched')
+        return response
     else:
-        return '', 204
+        # Draw red box around detected faces
+        for (top, right, bottom, left) in face_locations:
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+        cv2.imwrite('unmatched_face.jpg', frame)
+        _, img_encoded = cv2.imencode('.jpg', frame)
+        response = make_response(img_encoded.tobytes())
+        response.headers.set('Content-Type', 'image/jpeg')
+        response.headers.set('X-Face-Status', 'not_matched')
+        return response
 
 if __name__ == '__main__':
     app.run(port=5000)

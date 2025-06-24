@@ -7,6 +7,7 @@ import MonacoEditorWrapper from './MonaccoWrapper';
 import TestCaseResult from './TestcaseResults';
 import { useParams } from 'react-router-dom';
 
+// --- Language and Default Code ---
 const languages = [
   { value: "javascript", label: "JavaScript" },
   { value: "python", label: "Python" },
@@ -23,6 +24,7 @@ const defaultCode = {
   typescript: "// Write your TypeScript code here\n\n"
 };
 
+// --- Test Status Constants ---
 const TEST_STATUS = {
   NOT_STARTED: 'NOT_STARTED',
   ACTIVE: 'ACTIVE',
@@ -30,6 +32,7 @@ const TEST_STATUS = {
   SUBMITTED: 'SUBMITTED'
 };
 
+// --- Fallback Components ---
 const TestNotStartedPage = ({ testDetails, timeUntilStart, isDarkMode }) => {
   const themeClasses = {
     background: isDarkMode ? 'bg-gray-900' : 'bg-gray-100',
@@ -105,6 +108,7 @@ const TestEndedPage = ({ testDetails, isSubmitted, isDarkMode }) => {
   );
 };
 
+// --- Main Coding Component (Refactored as requested) ---
 const CodingEnvironment = () => {
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("problem");
@@ -121,6 +125,7 @@ const CodingEnvironment = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // New state for test timing and status
   const [testDetails, setTestDetails] = useState(null);
   const [testStatus, setTestStatus] = useState(TEST_STATUS.NOT_STARTED);
   const [timeRemaining, setTimeRemaining] = useState('');
@@ -137,6 +142,7 @@ const CodingEnvironment = () => {
   const resizeRightRef = useRef(null);
   const { testId } = useParams();
 
+  // --- Helper function for formatting time ---
   const formatTimeDifference = (targetTime) => {
     const now = new Date().getTime();
     const target = new Date(targetTime).getTime();
@@ -152,6 +158,7 @@ const CodingEnvironment = () => {
     return `${seconds}s`;
   };
 
+  // --- Only one timer logic, ACTIVE between start and end time ---
   const checkTestStatus = (testData) => {
     const now = new Date().getTime();
     const startTime = new Date(testData.startTime).getTime();
@@ -197,6 +204,7 @@ const CodingEnvironment = () => {
     return () => clearInterval(interval);
   }, [testDetails]); // eslint-disable-line
 
+  // --- Auto-submit when test time expires ---
   const handleAutoSubmit = async () => {
     const userEmail = localStorage.getItem('userEmail');
     try {
@@ -215,6 +223,7 @@ const CodingEnvironment = () => {
     }
   };
 
+  // --- Fetch test and problems ---
   useEffect(() => {
     const fetchTestAndQuestions = async () => {
       setIsLoading(true);

@@ -6,6 +6,8 @@ const FaceRecognition = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [message, setMessage] = useState("");
   const [intervalId, setIntervalId] = useState(null);
+  const [frameImage, setFrameImage] = useState(null); // for displaying backend image
+  const [faceStatus, setFaceStatus] = useState("");   // for status: matched, not_matched, not_detected
 
   useEffect(() => {
     // Start webcam stream on component mount
@@ -26,8 +28,9 @@ const FaceRecognition = () => {
       if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       }
-      if(intervalId) clearInterval(intervalId);
+      if (intervalId) clearInterval(intervalId);
     };
+    // eslint-disable-next-line
   }, []);
 
   const captureFrame = () => {
@@ -81,6 +84,8 @@ const FaceRecognition = () => {
     const imageBlob = await captureFrame();
     if (!imageBlob) {
       setMessage("Could not capture image for verification.");
+      setFrameImage(null);
+      setFaceStatus("");
       return;
     }
 
@@ -91,18 +96,29 @@ const FaceRecognition = () => {
       method: "POST",
       body: formData,
     })
-      .then((res) => {
+      .then(async (res) => {
+        const status = res.headers.get("X-Face-Status");
+        setFaceStatus(status || "");
         if (res.ok) {
-          setMessage("Face verified ✔️");
-        } else if (res.status === 204) {
-          setMessage("Face mismatch or not detected ❌");
-          // Optionally, save frame or alert cheating here
+          const imageBlob = await res.blob();
+          setFrameImage(URL.createObjectURL(imageBlob));
+          if (status === "matched") {
+            setMessage("Face matched ✔️");
+          } else if (status === "not_matched") {
+            setMessage("Face not matched ❌");
+          } else if (status === "not_detected") {
+            setMessage("No face detected ❌");
+          } else {
+            setMessage("Unknown status");
+          }
         } else {
           setMessage("Verification failed.");
+          setFrameImage(null);
         }
       })
       .catch(() => {
         setMessage("Network or server error during verification.");
+        setFrameImage(null);
       });
   };
 
@@ -153,6 +169,33 @@ const FaceRecognition = () => {
         </button>
       </div>
       <p>{message}</p>
+      {frameImage && (
+        <div>
+          <img
+            src={frameImage}
+            alt="Face Result"
+            style={{
+              width: 320,
+              height: 240,
+              marginTop: 8,
+              border: "2px solid #333",
+              objectFit: "cover",
+            }}
+          />
+          <p style={{
+            color: faceStatus === "matched" ? "green" : "red",
+            fontWeight: "bold"
+          }}>
+            {faceStatus === "matched"
+              ? "Face Matched"
+              : faceStatus === "not_matched"
+              ? "Face Not Matched"
+              : faceStatus === "not_detected"
+              ? "No Face Detected"
+              : ""}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
