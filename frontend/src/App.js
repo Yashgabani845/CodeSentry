@@ -22,6 +22,7 @@ import Landing from './Components/Landing_owner/Landing';
 import ContactUs from './Components/ContactUs/Contactus,';
 import AboutUs from './Components/AboutSection/Aboutus';
 import AuthPage from './Components/Company/AuthPage';
+import TestEntryPage from './Components/EntryPage/TestEntryPage';
 function App() {
   return (
     <Router>
@@ -35,9 +36,9 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-        <Route path="/live" element={<LiveCam />} />
-        <Route path="/face" element={<FaceRecognition />} />
-
+      <Route path="/live" element={<LiveCam />} />
+      <Route path="/face" element={<FaceRecognition />} />
+      <Route path = "/entry" element = {<TestEntryPage />} />
       <Route path="/admin" element={
         <AdminLayout>
           <Dashboard />
