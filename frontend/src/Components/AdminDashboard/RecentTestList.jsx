@@ -11,7 +11,7 @@ const RecentTestsList = ({ tests }) => {
       year: 'numeric'
     });
   };
-
+const user1 = JSON.parse(localStorage.getItem("user"));
   return (
     <div className="divide-y divide-gray-100">
       {tests.length === 0 ? (
@@ -32,7 +32,7 @@ const RecentTestsList = ({ tests }) => {
               <div>
                 <h3 className="font-medium text-gray-800">{test.testName}</h3>
                 <p className="text-sm text-gray-500">
-                  Created {formatDate(test.createdAt)} by {test.createdBy}
+                  Created {formatDate(test.createdAt)} by {user1.email}
                 </p>
               </div>
             </div>

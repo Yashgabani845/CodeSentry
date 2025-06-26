@@ -23,6 +23,7 @@ import ContactUs from './Components/ContactUs/Contactus,';
 import AboutUs from './Components/AboutSection/Aboutus';
 import AuthPage from './Components/Company/AuthPage';
 import TestEntryPage from './Components/EntryPage/TestEntryPage';
+import AdminSubmission from './Components/AdminDashboard/Submisions/Submission';
 function App() {
   return (
     <Router>
@@ -39,6 +40,8 @@ function App() {
       <Route path="/live" element={<LiveCam />} />
       <Route path="/face" element={<FaceRecognition />} />
       <Route path = "/entry" element = {<TestEntryPage />} />
+      <Route path = "/admin/submission" element = {<AdminSubmission />} />
+
       <Route path="/admin" element={
         <AdminLayout>
           <Dashboard />

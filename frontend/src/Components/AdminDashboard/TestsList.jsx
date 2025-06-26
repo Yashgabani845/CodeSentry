@@ -11,7 +11,9 @@ const TestsList = () => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/tests/all');
+        const user1 = JSON.parse(localStorage.getItem("user"));
+        console.log(user1)
+        const response = await fetch(`http://localhost:8080/api/tests/by-user/${user1.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch tests');
         }

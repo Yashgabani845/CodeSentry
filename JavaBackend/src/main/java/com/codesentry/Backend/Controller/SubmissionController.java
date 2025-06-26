@@ -96,7 +96,10 @@ public class SubmissionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
-
+    @GetMapping("/all")
+    public List<Submission> getAllSubmissions() {
+    return submissionRepository.findAll();
+}
     @PostMapping("/run")
 public ResponseEntity<?> runCode(@RequestBody SubmissionRequest request) {
     try {

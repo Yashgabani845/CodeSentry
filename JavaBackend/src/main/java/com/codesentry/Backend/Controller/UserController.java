@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+
 // @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/users")
@@ -19,7 +20,7 @@ public class UserController {
     @PostMapping("/add")
     public User createUser(@RequestBody User user) {
         if (user.getFirstName() == null || user.getLastName() == null ||
-            user.getEmail() == null || user.getPassword() == null || user.getRole() == null) {
+                user.getEmail() == null || user.getPassword() == null || user.getRole() == null) {
             throw new RuntimeException("Missing required fields");
         }
 
@@ -35,6 +36,11 @@ public class UserController {
     @GetMapping("/all")
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable String id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     // Get user by email
