@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: face-recognition-api
+    env: docker
+    region: oregon
+    plan: free

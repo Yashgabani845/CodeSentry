@@ -19,7 +19,7 @@ import EditCodingTest from './Components/AdminDashboard/EditCodingTest';
 import LiveCam from './Components/Detection/LiveCam';
 import FaceRecognition from './Components/Detection/FaceRecognision';
 import Landing from './Components/Landing_owner/Landing';
-import ContactUs from './Components/ContactUs/Contactus';
+import ContactUs from './Components/ContactUs/Contactus,';
 import AboutUs from './Components/AboutSection/Aboutus';
 import AuthPage from './Components/Company/AuthPage';
 import TestEntryPage from './Components/EntryPage/TestEntryPage';

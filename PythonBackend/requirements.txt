@@ -3,3 +3,4 @@ opencv-python
 flask-cors
 face_recognition
 opencv-python
+numpy
