@@ -48,6 +48,7 @@ public class CodingTestController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCodingTest(@PathVariable String id) {
         if (codingTestRepository.existsById(id)) {
