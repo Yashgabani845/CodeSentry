@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Edit, Trash2, Search, Filter, Code, GitPullRequest } from 'lucide-react';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const TestsList = () => {
   const [tests, setTests] = useState([]);
@@ -13,7 +14,7 @@ const TestsList = () => {
       try {
         const user1 = JSON.parse(localStorage.getItem("user"));
         console.log(user1)
-        const response = await fetch(`http://localhost:8080/api/tests/by-user/${user1.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/tests/by-user/${user1.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch tests');
         }
@@ -53,7 +54,7 @@ const TestsList = () => {
     // In a real application, you would make an API call to delete the test
     if (window.confirm('Are you sure you want to delete this test?')) {
       try {
-        const response = await fetch(`http://localhost:8080/api/tests/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/tests/${id}`, {
           method: 'DELETE'
         });
         if (!response.ok) {

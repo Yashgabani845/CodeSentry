@@ -18,6 +18,7 @@ import {
   Monitor,
   Activity,
 } from "lucide-react"
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 // Utility: fetch with error check
 async function fetchWithError(url, options = {}) {
@@ -589,14 +590,14 @@ export default function EnhancedTestDashboard() {
         }
 
         const userData = await fetchWithError(
-          `http://localhost:8080/api/users/by-email?email=${encodeURIComponent(email)}`,
+          `${API_BASE_URL}/api/users/by-email?email=${encodeURIComponent(email)}`,
         )
         setUser(userData)
 
-        const testsData = await fetchWithError(`http://localhost:8080/api/tests/by-user/${userData.id}`)
+        const testsData = await fetchWithError(`${API_BASE_URL}/api/tests/by-user/${userData.id}`)
         setTests(testsData)
 
-        const allSubmissions = await fetchWithError(`http://localhost:8080/api/submissions/all`)
+        const allSubmissions = await fetchWithError(`${API_BASE_URL}/api/submissions/all`)
         const myTestIds = new Set(testsData.map((t) => t.id))
         const filtered = allSubmissions.filter((sub) => sub.userId && myTestIds.has(sub.testId))
         setSubmissions(filtered)
@@ -633,7 +634,7 @@ export default function EnhancedTestDashboard() {
 
     try {
       const user1 = JSON.parse(localStorage.getItem("user"))
-      const res = await fetchWithError(`http://localhost:8080/api/users/${user1.id}`)
+      const res = await fetchWithError(`${API_BASE_URL}/api/users/${user1.id}`)
       setUserDetailsMap((prev) => ({
         ...prev,
         [userId]: res,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertCircle, Check, ChevronDown, ChevronUp, Plus, Save, Trash2, X } from 'lucide-react';
 import AptitudeQuestionCard from './AptitudeQuestionCard';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const AptitudeTestBuilder = () => {
   const { id } = useParams();
@@ -17,7 +18,7 @@ const AptitudeTestBuilder = () => {
   useEffect(() => {
     const fetchTestData = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/tests/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/tests/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch test details');
         }
@@ -25,7 +26,7 @@ const AptitudeTestBuilder = () => {
         setTestDetails(data);
         
         // Fetch existing questions for this test if any
-        const questionsResponse = await fetch(`http://localhost:8080/api/aptitude-questions/all`);
+        const questionsResponse = await fetch(`${API_BASE_URL}/api/aptitude-questions/all`);
         if (questionsResponse.ok) {
           const existingQuestions = await questionsResponse.json();
           const testQuestions = existingQuestions.filter(q => q.testId === id);
@@ -110,7 +111,7 @@ const AptitudeTestBuilder = () => {
 
   const updateTestWithQuestionIds = async (questionIds) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/tests/${id}/update-questions`, {
+    const response = await fetch(`${API_BASE_URL}/api/tests/${id}/update-questions`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -144,7 +145,7 @@ const AptitudeTestBuilder = () => {
       const savedQuestions = [];
       
       for (const question of questions) {
-        const response = await fetch('http://localhost:8080/api/aptitude-questions/add', {
+        const response = await fetch(`${API_BASE_URL}/api/aptitude-questions/add`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

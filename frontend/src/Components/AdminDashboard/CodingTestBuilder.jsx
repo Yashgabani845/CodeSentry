@@ -8,6 +8,8 @@ import CodeEditor from './CodeEditor';
 import { createCodingTest } from '../../Services/CodingTestService';
 
 const CodingTestBuilder = () => {
+  const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
+
   const { id } = useParams(); // This is the parent test ID
   const navigate = useNavigate();
 
@@ -133,7 +135,7 @@ const CodingTestBuilder = () => {
       }
       
       // Update the parent test with all coding test IDs
-      await fetch(`http://localhost:8080/api/tests/${id}/update-questions`, {
+      await fetch(`${API_BASE_URL}/api/tests/${id}/update-questions`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

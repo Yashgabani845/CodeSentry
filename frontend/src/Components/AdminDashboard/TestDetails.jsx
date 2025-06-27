@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader, AlertCircle, FileText, CheckCircle, Code, ArrowRight, Info, List, ChevronDown, ChevronUp } from 'lucide-react';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const TestDetails = () => {
   const { id } = useParams();
@@ -17,7 +18,7 @@ const TestDetails = () => {
         setError(null);
 
         // Fetch test details with error response logging
-        const testResponse = await fetch(`http://localhost:8080/api/tests/${id}`);
+        const testResponse = await fetch(`${API_BASE_URL}/api/tests/${id}`);
         console.log('Test Response:', testResponse);
         
         if (!testResponse.ok) {
@@ -61,7 +62,7 @@ const TestDetails = () => {
 
     // Fetch questions for the test with error response logging
     const questionPromises = testData.questionIds.map(async (questionId) => {
-      const questionResponse = await fetch(`http://localhost:8080/api/aptitude-questions/${questionId}`);
+      const questionResponse = await fetch(`${API_BASE_URL}/api/aptitude-questions/${questionId}`);
       
       if (!questionResponse.ok) {
         const errorText = await questionResponse.text();
@@ -84,7 +85,7 @@ const TestDetails = () => {
 
     // Fetch all coding questions
     const codingTestPromises = testData.questionIds.map(async (questionId) => {
-      const codingTestResponse = await fetch(`http://localhost:8080/api/coding-tests/${questionId}`);
+      const codingTestResponse = await fetch(`${API_BASE_URL}/api/coding-tests/${questionId}`);
       
       if (!codingTestResponse.ok) {
         const errorText = await codingTestResponse.text();

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, Save, Edit, Trash2, AlertCircle, X, Check } from 'lucide-react';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const EditAptitudeTest = () => {
   const navigate = useNavigate();
@@ -22,12 +23,12 @@ const EditAptitudeTest = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const testResponse = await fetch(`http://localhost:8080/api/tests/${id}`);
+        const testResponse = await fetch(`${API_BASE_URL}/api/tests/${id}`);
         if (!testResponse.ok) throw new Error('Failed to fetch test data');
         const testData = await testResponse.json();
         setTest(testData);
         
-        const questionsResponse = await fetch('http://localhost:8080/api/aptitude-questions/all');
+        const questionsResponse = await fetch(`${API_BASE_URL}/api/aptitude-questions/all`);
         if (!questionsResponse.ok) throw new Error('Failed to fetch aptitude questions');
         const questionsData = await questionsResponse.json();
         setAllQuestions(questionsData);
@@ -86,7 +87,7 @@ const EditAptitudeTest = () => {
 
   const handleUpdateQuestion = async (updatedQuestion) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/aptitude-questions/${updatedQuestion.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/aptitude-questions/${updatedQuestion.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ const EditAptitudeTest = () => {
     try {
       const questionIds = testQuestions.map(q => q.id);
       
-      const response = await fetch(`http://localhost:8080/api/tests/${id}/update-questions`, {
+      const response = await fetch(`${API_BASE_URL}/api/tests/${id}/update-questions`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +130,7 @@ const EditAptitudeTest = () => {
       }
       
       const totalMarks = calculateTotalMarks();
-      await fetch(`http://localhost:8080/api/tests/${id}`, {
+      await fetch(`${API_BASE_URL}/api/tests/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Code, GitPullRequest, Users } from 'lucide-react';
 import StatCard from './StatCard';
 import RecentTestList from './RecentTestList';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -18,7 +19,7 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const user1 = JSON.parse(localStorage.getItem("user"));
-        const response = await fetch(`http://localhost:8080/api/tests/by-user/${user1.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/tests/by-user/${user1.id}`);
         const tests = await response.json();
         
         // Calculate stats from the fetched data

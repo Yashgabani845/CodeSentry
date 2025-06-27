@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BookOpen, Code } from 'lucide-react';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const EditTest = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const EditTest = () => {
   useEffect(() => {
     const fetchTestData = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/tests/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/tests/${id}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch test data');
@@ -90,7 +91,7 @@ const EditTest = () => {
     
     try {
       // Update the test details
-      const response = await fetch(`http://localhost:8080/api/tests/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/tests/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

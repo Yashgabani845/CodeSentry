@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, Save, Edit, Trash2, AlertCircle, Code, X, Check, ChevronDown, ChevronUp } from 'lucide-react';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const EditCodingTest = () => {
   const navigate = useNavigate();
@@ -30,13 +31,13 @@ const EditCodingTest = () => {
       try {
         setIsLoading(true);
         // Fetch test details
-        const testResponse = await fetch(`http://localhost:8080/api/tests/${id}`);
+        const testResponse = await fetch(`${API_BASE_URL}/api/tests/${id}`);
         if (!testResponse.ok) throw new Error('Failed to fetch test data');
         const testData = await testResponse.json();
         setTest(testData);
         
         // Fetch all coding problems
-        const problemsResponse = await fetch('http://localhost:8080/api/coding-tests');
+        const problemsResponse = await fetch(`${API_BASE_URL}/api/coding-tests`);
         if (!problemsResponse.ok) throw new Error('Failed to fetch coding problems');
         const problemsData = await problemsResponse.json();
         setAllProblems(problemsData);
@@ -122,7 +123,7 @@ const EditCodingTest = () => {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:8080/api/coding-tests/${editingProblem.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/coding-tests/${editingProblem.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +169,7 @@ const EditCodingTest = () => {
       const questionIds = testProblems.map(p => p.id);
       
       // Update the test problems
-      const response = await fetch(`http://localhost:8080/api/tests/${id}/update-questions`, {
+      const response = await fetch(`${API_BASE_URL}/api/tests/${id}/update-questions`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +183,7 @@ const EditCodingTest = () => {
       
       // Update test with new total marks
       const totalMarks = calculateTotalMarks();
-      await fetch(`http://localhost:8080/api/tests/${id}`, {
+      await fetch(`${API_BASE_URL}/api/tests/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

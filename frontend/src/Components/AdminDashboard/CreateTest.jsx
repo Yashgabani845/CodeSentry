@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Code } from 'lucide-react';
+const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const CreateTest = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const CreateTest = () => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:8080/api/tests/create', {
+      const response = await fetch(`${API_BASE_URL}/api/tests/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
