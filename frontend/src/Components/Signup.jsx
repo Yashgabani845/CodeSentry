@@ -1,6 +1,7 @@
 // Signup.jsx
 import React, { useState  } from "react";
 import {   useNavigate} from "react-router-dom";
+const API_BASE_URL = process.env.PROD_API_BASE_URL;
 
 function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +31,7 @@ function Signup() {
   
     try {
       // Send formData directly without wrapping in an object
-      const response = await fetch("http://localhost:8080/api/users/add", {
+      const response = await fetch(`${API_BASE_URL}/api/users/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

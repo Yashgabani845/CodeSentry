@@ -8,6 +8,8 @@ import TestCaseResult from './TestcaseResults';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
 
+
+const API_BASE_URL = process.env.PROD_API_BASE_URL;
 const languages = [
   { value: "javascript", label: "JavaScript" },
   { value: "python", label: "Python" },
@@ -60,7 +62,7 @@ const CodingEnvironment = () => {
       setIsLoading(true);
       try {
         console.log("⏳ Fetching test...");
-        const testResponse = await fetch(`http://localhost:8080/api/tests/${testId}`);
+        const testResponse = await fetch(`${API_BASE_URL}/api/tests/${testId}`);
 
         if (!testResponse.ok) {
           throw new Error(`HTTP error! Status: ${testResponse.status}`);
@@ -71,7 +73,7 @@ const CodingEnvironment = () => {
 
         if (test &&( test.testType === "CODING" || test.testType === "coding") && Array.isArray(test.questionIds)) {
           const questionPromises = test.questionIds.map(id =>
-            fetch(`http://localhost:8080/api/coding-tests/${id}`)
+            fetch(`${API_BASE_URL}/api/coding-tests/${id}`)
               .then(res => {
                 if (!res.ok) {
                   throw new Error(`HTTP error! Status: ${res.status} for question ID: ${id}`);
@@ -166,7 +168,7 @@ const CodingEnvironment = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8080/api/submissions/run", {
+      const response = await fetch(`${API_BASE_URL}/api/submissions/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -209,7 +211,7 @@ const CodingEnvironment = () => {
   setIsSubmitting(true); // show loader if needed
 
   try {
-    const response = await fetch("http://localhost:8080/api/submissions", {
+    const response = await fetch(`${API_BASE_URL}/api/submissions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

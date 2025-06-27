@@ -1,6 +1,9 @@
 // Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
+
 function Login() {
   const navigate = useNavigate();
 
@@ -16,7 +19,7 @@ function Login() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/users/login", {
+      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

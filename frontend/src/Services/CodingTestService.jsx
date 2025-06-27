@@ -1,10 +1,11 @@
 // Coding Test API Service
 
 const API_URL = 'http://localhost:8080/api/coding-tests';
+const API_BASE_URL = process.env.PROD_API_BASE_URL + "/api/coding-test";
 
 export const fetchAllCodingTests = async () => {
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(API_BASE_URL);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
@@ -17,7 +18,7 @@ export const fetchAllCodingTests = async () => {
 
 export const fetchCodingTest = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/${id}`);
+    const response = await fetch(`${API_BASE_URL}/${id}`);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
@@ -30,7 +31,7 @@ export const fetchCodingTest = async (id) => {
 
 export const createCodingTest = async (codingTest) => {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ export const createCodingTest = async (codingTest) => {
 
 export const updateCodingTest = async (id, codingTest) => {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ export const updateCodingTest = async (id, codingTest) => {
 
 export const deleteCodingTest = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'DELETE',
     });
     

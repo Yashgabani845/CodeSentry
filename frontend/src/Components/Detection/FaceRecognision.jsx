@@ -9,6 +9,7 @@ const FaceRecognition = () => {
   const [frameImage, setFrameImage] = useState(null); // for displaying backend image
   const [faceStatus, setFaceStatus] = useState("");   // for status: matched, not_matched, not_detected
 
+
   useEffect(() => {
     // Start webcam stream on component mount
     navigator.mediaDevices

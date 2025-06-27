@@ -31,7 +31,8 @@ public class SecurityConfig {
         // Allow specific origins - add all trusted domains here
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
-            "http://127.0.0.1:3000"
+            "http://127.0.0.1:3000",
+            "https://code-sentry.vercel.app"
             // Add other origins as needed
         ));
         

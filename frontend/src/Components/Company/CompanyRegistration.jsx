@@ -5,6 +5,9 @@ import Step2_CompanyDescription from './Step2_CompanyDescription';
 import Step3_AdminUserDetails from './Step3_AdminDetails';
 import SuccessPage from './SuccessPage';
 
+
+const API_BASE_URL = process.env.PROD_API_BASE_URL;
+
 const CompanyRegisterPage = ({ toggleAuthMode }) => {
     const [currentStep, setCurrentStep] = useState(1)
     const [formData, setFormData] = useState({

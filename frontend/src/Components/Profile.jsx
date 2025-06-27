@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Homepage/Navbar';
 import Footer from './Homepage/Footer';
+const API_BASE_URL = process.env.PROD_API_BASE_URL;
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Profile = () => {
       }
 
       try {
-        const response = await fetch(`http://localhost:8080/api/users/by-email?email=${encodeURIComponent(userEmail)}`);
+        const response = await fetch(`${API_BASE_URL}/api/users/by-email?email=${encodeURIComponent(userEmail)}`);
         if (!response.ok) {
           throw new Error('Failed to fetch user data');
         }
@@ -70,7 +71,7 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:8080/api/users/${formData.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${formData.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
