@@ -12,6 +12,7 @@ import AptitudeTestBuilder from './Components/AdminDashboard/AptitudeTestBuilder
 import CodingTestBuilder from './Components/AdminDashboard/CodingTestBuilder';  
 import './App.css';
 import TestDetails from './Components/AdminDashboard/TestDetails';
+import DisableKeysWrapper from './Components/Coding/KeyBoardDisable';
 import CodingEnvironment from './Components/Coding/Coding';
 import EditTest from './Components/AdminDashboard/EditTest';
 import EditAptitudeTest from './Components/AdminDashboard/EditAptitudeTest';
@@ -33,7 +34,11 @@ function App() {
       <Route path="/owner/login" element={<AuthPage />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/about" element={<AboutUs />} />
-      <Route path="/code/:testId" element={<CodingEnvironment />} />
+      <Route path="/code/:testId" element={
+         <DisableKeysWrapper>
+      <CodingEnvironment />
+    </DisableKeysWrapper>
+        } />
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />

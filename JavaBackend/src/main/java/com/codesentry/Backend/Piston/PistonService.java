@@ -11,7 +11,6 @@ public class PistonService {
         String url = "https://emkc.org/api/v2/piston/execute";
     
         RestTemplate restTemplate = new RestTemplate();
-    
         String normalizedLanguage;
         String version;
     
