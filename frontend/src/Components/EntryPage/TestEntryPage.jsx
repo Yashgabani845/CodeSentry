@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Shield, Eye, Monitor, Users, CheckCircle, AlertTriangle, Play } from 'lucide-react';
 import Navbar from '../Homepage/Navbar';
-const SERVER_URL = 'http://localhost:5000';
+const SERVER_URL = 'https://face-recognition-api-n3xi.onrender.com';
 const TestEntryPage = () => {
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);

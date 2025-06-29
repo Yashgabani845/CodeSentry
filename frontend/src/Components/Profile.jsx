@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Homepage/Navbar';
 import Footer from './Homepage/Footer';
-const API_BASE_URL = process.env.PROD_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const Profile = () => {
   const navigate = useNavigate();

@@ -163,7 +163,11 @@ def verify():
         response.headers.set('Content-Type', 'image/jpeg')
         response.headers.set('X-Face-Status', 'not_matched')
         return response
-    
+
+@app.route('/')
+def health():
+    return 'OK'
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # default to 5000, but use PORT if set
     app.run(host='0.0.0.0', port=port)

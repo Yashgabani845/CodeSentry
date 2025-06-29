@@ -6,7 +6,7 @@ import Step3_AdminUserDetails from './Step3_AdminDetails';
 import SuccessPage from './SuccessPage';
 
 
-const API_BASE_URL = process.env.PROD_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const CompanyRegisterPage = ({ toggleAuthMode }) => {
     const [currentStep, setCurrentStep] = useState(1)

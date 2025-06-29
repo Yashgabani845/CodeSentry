@@ -1,7 +1,7 @@
 // Coding Test API Service
 
 const API_URL = 'http://localhost:8080/api/coding-tests';
-const API_BASE_URL = process.env.PROD_API_BASE_URL + "/api/coding-test";
+const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL + "/api/coding-tests";
 
 export const fetchAllCodingTests = async () => {
   try {

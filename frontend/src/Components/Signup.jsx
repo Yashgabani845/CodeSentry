@@ -1,7 +1,7 @@
 // Signup.jsx
 import React, { useState  } from "react";
 import {   useNavigate} from "react-router-dom";
-const API_BASE_URL = process.env.PROD_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 function Signup() {
   const [showPassword, setShowPassword] = useState(false);

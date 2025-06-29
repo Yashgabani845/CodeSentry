@@ -9,7 +9,7 @@ import Timer from './Timer';
 import { useParams } from 'react-router-dom';
 
 
-const API_BASE_URL = process.env.PROD_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 const languages = [
   { value: "javascript", label: "JavaScript" },
   { value: "python", label: "Python" },

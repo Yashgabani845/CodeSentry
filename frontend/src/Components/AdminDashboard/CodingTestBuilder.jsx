@@ -1,14 +1,104 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, Check, Plus, Save, Trash2, X, ChevronDown, ChevronUp, Code } from 'lucide-react';
+import { AlertCircle, Check, Plus, Save, Trash2, X, ChevronDown, ChevronUp, Code, Copy, ExternalLink } from 'lucide-react';
 import ExampleSection from './ExampleSection';
 import TestCaseSection from './TestCaseSection';
 import ConstraintsSection from './ConstraintsSection';
 import CodeEditor from './CodeEditor';
 import { createCodingTest } from '../../Services/CodingTestService';
 
+// Success Modal Component
+const SuccessModal = ({ isOpen, onClose, testId }) => {
+  const [copied, setCopied] = useState(false);
+  const testLink = `https://code-sentry.vercel.app/code/${testId}`;
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(testLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  const openInNewTab = () => {
+    window.open(testLink, '_blank');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div className="p-6">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
+            <Check className="w-6 h-6 text-green-600" />
+          </div>
+          
+          <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+            Test Created Successfully!
+          </h3>
+          
+          <p className="text-sm text-gray-500 text-center mb-6">
+            Your coding test has been created. Share this link with candidates:
+          </p>
+          
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-mono text-gray-800 truncate">
+                  {testLink}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex space-x-3 mb-4">
+            <button
+              onClick={copyToClipboard}
+              className={`flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium ${
+                copied 
+                  ? 'bg-green-50 text-green-700 border-green-200' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Link
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={openInNewTab}
+              className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open Test
+            </button>
+          </div>
+          
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CodingTestBuilder = () => {
-  const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
+  const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
   const { id } = useParams(); // This is the parent test ID
   const navigate = useNavigate();
@@ -31,6 +121,7 @@ const CodingTestBuilder = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     examples: true,
     testCases: true,
@@ -145,10 +236,9 @@ const CodingTestBuilder = () => {
 
       setSuccess(`Successfully saved ${codingQuestions.length} coding question${codingQuestions.length > 1 ? 's' : ''}!`);
       
-      // Navigate back to tests list after successful save
-      setTimeout(() => {
-        navigate('/admin/tests');
-      }, 1500);
+      // Show success modal instead of navigating immediately
+      setShowSuccessModal(true);
+      
     } catch (err) {
       console.error('Error saving coding tests:', err);
       setError('Failed to save coding tests. Please try again.');
@@ -157,307 +247,321 @@ const CodingTestBuilder = () => {
     }
   };
 
+  const handleModalClose = () => {
+    setShowSuccessModal(false);
+    navigate('/admin/tests');
+  };
+
   const activeQuestion = codingQuestions[activeQuestionIndex];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12 mt-12">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Create Coding Questions</h1>
-          <p className="text-gray-500">Add coding questions to your test</p>
-        </div>
+    <>
+      <div className="space-y-6 max-w-4xl mx-auto pb-12 mt-12">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Create Coding Questions</h1>
+            <p className="text-gray-500">Add coding questions to your test</p>
+          </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => navigate('/admin/tests')}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Cancel
-          </button>
-          
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`px-6 py-2 bg-blue-600 text-white rounded-md flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              saving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
-            }`}
-          >
-            {saving ? (
-              <>
-                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Save Questions
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-      
-      {/* Error and success messages */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
-          <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-          <div>{error}</div>
-          <button 
-            className="ml-auto flex-shrink-0"
-            onClick={() => setError('')}
-          >
-            <X className="w-5 h-5 text-red-500" />
-          </button>
-        </div>
-      )}
-      
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-start">
-          <Check className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-          <div>{success}</div>
-          <button 
-            className="ml-auto flex-shrink-0"
-            onClick={() => setSuccess('')}
-          >
-            <X className="w-5 h-5 text-green-500" />
-          </button>
-        </div>
-      )}
-
-      {/* Question navigation tabs */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200">
-          <div className="px-4 py-3 flex items-center space-x-1 overflow-x-auto">
-            {codingQuestions.map((question, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveQuestionIndex(index)}
-                className={`px-4 py-2 rounded-t-lg flex items-center ${
-                  activeQuestionIndex === index 
-                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500 font-medium' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span>Question {index + 1}</span>
-                {codingQuestions.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveQuestion(index);
-                    }}
-                    className="ml-2 p-1 rounded-full hover:bg-red-100 hover:text-red-600"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </button>
-            ))}
+          <div className="flex items-center space-x-3">
             <button
-              onClick={handleAddQuestion}
-              className="px-3 py-2 rounded-md flex items-center text-blue-600 hover:bg-blue-50"
+              onClick={() => navigate('/admin/tests')}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Question
+              Cancel
+            </button>
+            
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`px-6 py-2 bg-blue-600 text-white rounded-md flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                saving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Questions
+                </>
+              )}
             </button>
           </div>
         </div>
+        
+        {/* Error and success messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <div>{error}</div>
+            <button 
+              className="ml-auto flex-shrink-0"
+              onClick={() => setError('')}
+            >
+              <X className="w-5 h-5 text-red-500" />
+            </button>
+          </div>
+        )}
+        
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-start">
+            <Check className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <div>{success}</div>
+            <button 
+              className="ml-auto flex-shrink-0"
+              onClick={() => setSuccess('')}
+            >
+              <X className="w-5 h-5 text-green-500" />
+            </button>
+          </div>
+        )}
 
-        {/* Main form */}
-        <div className="p-6 space-y-6">
-          {/* Basic details */}
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={activeQuestion.title}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter question title"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description *
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={activeQuestion.description}
-                onChange={handleInputChange}
-                rows="4"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Describe the coding problem in detail"
-                required
-              ></textarea>
-            </div>
-            
-            <div>
-              <label htmlFor="marks" className="block text-sm font-medium text-gray-700 mb-1">
-                Marks *
-              </label>
-              <input
-                type="number"
-                id="marks"
-                name="marks"
-                value={activeQuestion.marks}
-                onChange={handleInputChange}
-                min="1"
-                className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-          </div>
-          
-          {/* Examples section */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div 
-              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
-              onClick={() => toggleSection('examples')}
-            >
-              <div className="font-medium flex items-center">
-                <span className="mr-2">Examples</span>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {activeQuestion.examples.length}
-                </span>
-              </div>
-              <button className="p-1 text-gray-500">
-                {expandedSections.examples ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        {/* Question navigation tabs */}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="border-b border-gray-200">
+            <div className="px-4 py-3 flex items-center space-x-1 overflow-x-auto">
+              {codingQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveQuestionIndex(index)}
+                  className={`px-4 py-2 rounded-t-lg flex items-center ${
+                    activeQuestionIndex === index 
+                      ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-500 font-medium' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>Question {index + 1}</span>
+                  {codingQuestions.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveQuestion(index);
+                      }}
+                      className="ml-2 p-1 rounded-full hover:bg-red-100 hover:text-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </button>
+              ))}
+              <button
+                onClick={handleAddQuestion}
+                className="px-3 py-2 rounded-md flex items-center text-blue-600 hover:bg-blue-50"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Question
               </button>
             </div>
-            
-            {expandedSections.examples && (
-              <ExampleSection
-                examples={activeQuestion.examples}
-                onChange={(examples) => {
-                  setCodingQuestions(prevQuestions => {
-                    const updatedQuestions = [...prevQuestions];
-                    updatedQuestions[activeQuestionIndex] = {
-                      ...updatedQuestions[activeQuestionIndex],
-                      examples
-                    };
-                    return updatedQuestions;
-                  });
-                }}
-              />
-            )}
           </div>
-          
-          {/* Test Cases section */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div 
-              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
-              onClick={() => toggleSection('testCases')}
-            >
-              <div className="font-medium flex items-center">
-                <span className="mr-2">Test Cases</span>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {activeQuestion.testCases.length}
-                </span>
+
+          {/* Main form */}
+          <div className="p-6 space-y-6">
+            {/* Basic details */}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={activeQuestion.title}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter question title"
+                  required
+                />
               </div>
-              <button className="p-1 text-gray-500">
-                {expandedSections.testCases ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+              
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Description *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={activeQuestion.description}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Describe the coding problem in detail"
+                  required
+                ></textarea>
+              </div>
+              
+              <div>
+                <label htmlFor="marks" className="block text-sm font-medium text-gray-700 mb-1">
+                  Marks *
+                </label>
+                <input
+                  type="number"
+                  id="marks"
+                  name="marks"
+                  value={activeQuestion.marks}
+                  onChange={handleInputChange}
+                  min="1"
+                  className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
             </div>
             
-            {expandedSections.testCases && (
-              <TestCaseSection
-                testCases={activeQuestion.testCases}
-                onChange={(testCases) => {
-                  setCodingQuestions(prevQuestions => {
-                    const updatedQuestions = [...prevQuestions];
-                    updatedQuestions[activeQuestionIndex] = {
-                      ...updatedQuestions[activeQuestionIndex],
-                      testCases
-                    };
-                    return updatedQuestions;
-                  });
-                }}
-              />
-            )}
-          </div>
-          
-          {/* Constraints section */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div 
-              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
-              onClick={() => toggleSection('constraints')}
-            >
-              <div className="font-medium flex items-center">
-                <span className="mr-2">Constraints</span>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                  {activeQuestion.constraints.length}
-                </span>
+            {/* Examples section */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div 
+                className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('examples')}
+              >
+                <div className="font-medium flex items-center">
+                  <span className="mr-2">Examples</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    {activeQuestion.examples.length}
+                  </span>
+                </div>
+                <button className="p-1 text-gray-500">
+                  {expandedSections.examples ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
               </div>
-              <button className="p-1 text-gray-500">
-                {expandedSections.constraints ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-            </div>
-            
-            {expandedSections.constraints && (
-              <ConstraintsSection
-                constraints={activeQuestion.constraints}
-                onChange={(constraints) => {
-                  setCodingQuestions(prevQuestions => {
-                    const updatedQuestions = [...prevQuestions];
-                    updatedQuestions[activeQuestionIndex] = {
-                      ...updatedQuestions[activeQuestionIndex],
-                      constraints
-                    };
-                    return updatedQuestions;
-                  });
-                }}
-              />
-            )}
-          </div>
-          
-          {/* Solution section */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div 
-              className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
-              onClick={() => toggleSection('solution')}
-            >
-              <div className="font-medium flex items-center">
-                <Code className="w-4 h-4 mr-1" />
-                <span>Solution Code</span>
-              </div>
-              <button className="p-1 text-gray-500">
-                {expandedSections.solution ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-            </div>
-            
-            {expandedSections.solution && (
-              <div className="p-4">
-                <CodeEditor
-                  value={activeQuestion.solution}
-                  onChange={(code) => {
+              
+              {expandedSections.examples && (
+                <ExampleSection
+                  examples={activeQuestion.examples}
+                  onChange={(examples) => {
                     setCodingQuestions(prevQuestions => {
                       const updatedQuestions = [...prevQuestions];
                       updatedQuestions[activeQuestionIndex] = {
                         ...updatedQuestions[activeQuestionIndex],
-                        solution: code
+                        examples
                       };
                       return updatedQuestions;
                     });
                   }}
-                  language="javascript"
-                  height="250px"
                 />
-                <p className="mt-2 text-sm text-gray-500">
-                  Provide a model solution for this coding problem.
-                </p>
+              )}
+            </div>
+            
+            {/* Test Cases section */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div 
+                className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('testCases')}
+              >
+                <div className="font-medium flex items-center">
+                  <span className="mr-2">Test Cases</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    {activeQuestion.testCases.length}
+                  </span>
+                </div>
+                <button className="p-1 text-gray-500">
+                  {expandedSections.testCases ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
               </div>
-            )}
+              
+              {expandedSections.testCases && (
+                <TestCaseSection
+                  testCases={activeQuestion.testCases}
+                  onChange={(testCases) => {
+                    setCodingQuestions(prevQuestions => {
+                      const updatedQuestions = [...prevQuestions];
+                      updatedQuestions[activeQuestionIndex] = {
+                        ...updatedQuestions[activeQuestionIndex],
+                        testCases
+                      };
+                      return updatedQuestions;
+                    });
+                  }}
+                />
+              )}
+            </div>
+            
+            {/* Constraints section */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div 
+                className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('constraints')}
+              >
+                <div className="font-medium flex items-center">
+                  <span className="mr-2">Constraints</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    {activeQuestion.constraints.length}
+                  </span>
+                </div>
+                <button className="p-1 text-gray-500">
+                  {expandedSections.constraints ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+              </div>
+              
+              {expandedSections.constraints && (
+                <ConstraintsSection
+                  constraints={activeQuestion.constraints}
+                  onChange={(constraints) => {
+                    setCodingQuestions(prevQuestions => {
+                      const updatedQuestions = [...prevQuestions];
+                      updatedQuestions[activeQuestionIndex] = {
+                        ...updatedQuestions[activeQuestionIndex],
+                        constraints
+                      };
+                      return updatedQuestions;
+                    });
+                  }}
+                />
+              )}
+            </div>
+            
+            {/* Solution section */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div 
+                className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center cursor-pointer"
+                onClick={() => toggleSection('solution')}
+              >
+                <div className="font-medium flex items-center">
+                  <Code className="w-4 h-4 mr-1" />
+                  <span>Solution Code</span>
+                </div>
+                <button className="p-1 text-gray-500">
+                  {expandedSections.solution ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+              </div>
+              
+              {expandedSections.solution && (
+                <div className="p-4">
+                  <CodeEditor
+                    value={activeQuestion.solution}
+                    onChange={(code) => {
+                      setCodingQuestions(prevQuestions => {
+                        const updatedQuestions = [...prevQuestions];
+                        updatedQuestions[activeQuestionIndex] = {
+                          ...updatedQuestions[activeQuestionIndex],
+                          solution: code
+                        };
+                        return updatedQuestions;
+                      });
+                    }}
+                    language="javascript"
+                    height="250px"
+                  />
+                  <p className="mt-2 text-sm text-gray-500">
+                    Provide a model solution for this coding problem.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Success Modal */}
+      <SuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={handleModalClose} 
+        testId={id} 
+      />
+    </>
   );
 };
 

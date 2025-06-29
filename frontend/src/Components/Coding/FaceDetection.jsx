@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
-const DETECT_INTERVAL = 2 * 1000;  // every 20 seconds
-const VERIFY_INTERVAL = 3 * 1000;  // every 30 seconds
+const DETECT_INTERVAL = 1 * 10000;  // every 20 seconds
+const VERIFY_INTERVAL = 1.5 * 10000;  // every 30 seconds
 
 function getWebcamImage(video) {
   const canvas = document.createElement("canvas");
@@ -41,16 +41,18 @@ export function withFaceVerification(WrappedComponent) {
         const imageBlob = await getWebcamImage(videoRef.current);
         const form = new FormData();
         form.append("image", imageBlob, "enroll.jpg");
-        const resp = await fetch("http://localhost:5000/enroll", {
+        const resp = await fetch("https://face-recognition-api-n3xi.onrender.com/enroll", {
           method: "POST",
           body: form,
         });
         if (resp.ok) {
           setEnrolled(true);
           setStatus("ok");
+          console.log("Face enrolled successfully.");
           setMessage("Face enrolled successfully.");
         } else {
           setStatus("blocked");
+          console.log("Face enrollment failed.");
           setMessage("Face enrollment failed. Reload and try again.");
         }
       }
@@ -74,15 +76,17 @@ export function withFaceVerification(WrappedComponent) {
         const imageBlob = await getWebcamImage(videoRef.current);
         const form = new FormData();
         form.append("image", imageBlob, "detect.jpg");
-        const resp = await fetch("http://localhost:5000/detect", {
+        const resp = await fetch("https://face-recognition-api-n3xi.onrender.com/detect", {
           method: "POST",
           body: form,
         });
         if (resp.status === 204) {
           setStatus("ok");
+          console.log("Single face detected.");
           setMessage("");
         } else if (resp.status === 200) {
           setStatus("detect-fail");
+          console.log("Multiple faces detected.");
           setMessage("Multiple faces detected! Please make sure only you are in front of the camera.");
         }
       } catch (err) {
@@ -97,18 +101,21 @@ export function withFaceVerification(WrappedComponent) {
         const imageBlob = await getWebcamImage(videoRef.current);
         const form = new FormData();
         form.append("image", imageBlob, "verify.jpg");
-        const resp = await fetch("http://localhost:5000/verify", {
+        const resp = await fetch("https://face-recognition-api-n3xi.onrender.com/verify", {
           method: "POST",
           body: form,
         });
         if (resp.status === 200) {
           setStatus("ok");
+          console.log("Face verified.");
           setMessage("");
         } else if (resp.status === 401) {
           setStatus("verify-fail");
-          setMessage("No face detected. Please keep your face visible.");
+          console.log("No face detected.");
+          setMessage("No face matched. Please keep your face visible.");
         } else if (resp.status === 403) {
           setStatus("verify-fail");
+          console.log("Face does not match enrollment.");
           setMessage("Face does not match enrollment. Please make sure only you are in front of the camera.");
         }
       } catch (err) {
