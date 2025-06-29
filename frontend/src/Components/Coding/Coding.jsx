@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Play, Send, LogOut, Maximize2, Minimize2, List, Settings, ChevronDown, X, Sun, Moon, CheckCircle, XCircle, AlertTriangle, Power } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Send, LogOut, List, Settings, ChevronDown, Sun, Moon, CheckCircle, XCircle } from 'lucide-react';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { withFaceVerification } from './FaceDetection';
 import MonacoEditorWrapper from './MonaccoWrapper';
 import TestCaseResult from './TestcaseResults';
-import Timer from './Timer';
-import { useParams } from 'react-router-dom';
-
+// --- Custom Timer ---
+import { useNavigate, useParams } from 'react-router-dom';
 
 const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 const languages = [
@@ -18,7 +17,6 @@ const languages = [
   { value: "typescript", label: "TypeScript" }
 ];
 
-
 const defaultCode = {
   javascript: "// Write your JavaScript code here\n\n",
   python: "# Write your Python code here\n\n",
@@ -26,6 +24,45 @@ const defaultCode = {
   cpp: "// Write your C++ code here\n\n#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}",
   typescript: "// Write your TypeScript code here\n\n"
 };
+
+// --- Custom Timer for End Time ---
+function EndTimeTimer({ endTime, onTimerEnd, isDarkMode }) {
+  const [secondsLeft, setSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    if (!endTime) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const end = new Date(endTime);
+      const diff = Math.max(0, Math.floor((end - now) / 1000));
+      setSecondsLeft(diff);
+      if (diff <= 0) {
+        clearInterval(interval);
+        onTimerEnd && onTimerEnd();
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [endTime, onTimerEnd]);
+
+  if (!endTime || secondsLeft <= 0) {
+    return (
+      <div className={`px-4 py-1 rounded-lg ${isDarkMode ? "bg-red-900 text-red-300" : "bg-red-100 text-red-700"} font-bold text-lg animate-pulse`}>
+        Time's Up!
+      </div>
+    );
+  }
+  const hours = Math.floor(secondsLeft / 3600);
+  const minutes = Math.floor((secondsLeft % 3600) / 60);
+  const seconds = secondsLeft % 60;
+
+  return (
+    <div className={`px-4 py-1 rounded-lg font-bold text-lg shadow-md ${isDarkMode ? "bg-gray-900 border-2 border-blue-800 text-blue-300" : "bg-blue-50 border-2 border-blue-300 text-blue-700"}`}>
+      ⏰ Time Left: <span className="tabular-nums">{hours.toString().padStart(2, "0")}</span>:
+      <span className="tabular-nums">{minutes.toString().padStart(2, "0")}</span>:
+      <span className="tabular-nums">{seconds.toString().padStart(2, "0")}</span>
+    </div>
+  );
+}
 
 const CodingEnvironment = () => {
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
@@ -42,6 +79,13 @@ const CodingEnvironment = () => {
   const [error, setError] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New states for strict timing and submission
+  const [testDetails, setTestDetails] = useState(null);
+  const [testStatus, setTestStatus] = useState('available'); // available, ended, out-of-window
+  const [submissions, setSubmissions] = useState([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+
   const leftPanelRef = useRef(null);
   const monacoRef = useRef(null);
   const rightPanelRef = useRef(null);
@@ -50,54 +94,77 @@ const CodingEnvironment = () => {
   const resizeLeftRef = useRef(null);
   const resizeRightRef = useRef(null);
   const { testId } = useParams();
+  const navigate = useNavigate();
 
-  // Handle editor value change
-  const handleEditorChange = (value) => {
-    setCode(value);
-  };
+  // --- Redirect if no userEmail ---
+  useEffect(() => {
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) {
+      window.location.href = "https://code-sentry.vercel.app/login";
+    }
+  }, []);
 
-  // Fetch problems on component mount
+  // --- Fetch problems and test details on mount ---
   useEffect(() => {
     const fetchTestAndQuestions = async () => {
       setIsLoading(true);
       try {
-        console.log("⏳ Fetching test...");
         const testResponse = await fetch(`${API_BASE_URL}/api/tests/${testId}`);
+        if (!testResponse.ok) throw new Error(`HTTP error! Status: ${testResponse.status}`);
+        const test = await testResponse.json();
+        setTestDetails(test);
 
-        if (!testResponse.ok) {
-          throw new Error(`HTTP error! Status: ${testResponse.status}`);
+        // Check if user already submitted for this test
+        const userEmail = localStorage.getItem('userEmail');
+        if (userEmail) {
+          const submissionRes = await fetch(`${API_BASE_URL}/api/submissions/all`);
+          if (submissionRes.ok) {
+            const allSubs = await submissionRes.json();
+            const userTestSubs = allSubs.filter(
+              sub => sub.testId === testId && sub.userId === userEmail
+            );
+            if (userTestSubs.length > 0) {
+              setTestStatus('ended');
+              setSubmissions(userTestSubs);
+              setIsLoading(false);
+              return;
+            }
+            // For submissions tab (show all for this user/test)
+            setSubmissions(allSubs.filter(sub => sub.testId === testId && sub.userId === userEmail));
+          }
         }
 
-        const test = await testResponse.json();
-        console.log("✅ Test fetched:", test);
+        // Check the test window
+        const now = new Date();
+        const startTime = new Date(test.startTime);
+        const endTime = new Date(test.endTime);
+        if (now < startTime || now > endTime) {
+          setTestStatus('out-of-window');
+          setIsLoading(false);
+          return;
+        }
 
-        if (test &&( test.testType === "CODING" || test.testType === "coding") && Array.isArray(test.questionIds)) {
+        // Load coding problems
+        if (test && (test.testType === "CODING" || test.testType === "coding") && Array.isArray(test.questionIds)) {
           const questionPromises = test.questionIds.map(id =>
             fetch(`${API_BASE_URL}/api/coding-tests/${id}`)
               .then(res => {
-                if (!res.ok) {
-                  throw new Error(`HTTP error! Status: ${res.status} for question ID: ${id}`);
-                }
+                if (!res.ok) throw new Error(`HTTP error! Status: ${res.status} for question ID: ${id}`);
                 return res.json();
               })
           );
-
           const questions = await Promise.all(questionPromises);
-          console.log("✅ Questions fetched:", questions);
-
           const numberedQuestions = questions.map((q, index) => ({
             ...q,
             number: index + 1,
-            startingCode: defaultCode, // This is correct as each question uses the entire defaultCode object
+            startingCode: defaultCode,
           }));
-
-          console.log("📦 Setting problems:", numberedQuestions);
           setProblems(numberedQuestions);
         } else {
           throw new Error("Invalid test data structure");
         }
+        setTestStatus('available');
       } catch (err) {
-        console.error("❌ Error in useEffect:", err);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -105,7 +172,7 @@ const CodingEnvironment = () => {
     };
 
     fetchTestAndQuestions();
-  }, []);
+  }, [testId]);
 
   // Debug logging for component state
   useEffect(() => {
@@ -115,7 +182,6 @@ const CodingEnvironment = () => {
   // Set current problem's code when language changes or problem changes
   useEffect(() => {
     if (problems.length > 0 && problems[currentProblemIndex]) {
-      // Use the proper starting code for the selected language
       setCode(defaultCode[language]);
     }
   }, [language, currentProblemIndex, problems]);
@@ -148,7 +214,60 @@ const CodingEnvironment = () => {
     }
   };
 
-  // Handle run code
+  // Strict timer: handle timer end as end test
+  const handleTimerEnd = () => {
+    handleEndTest(true);
+  };
+
+  // End test button logic
+  const handleEndTest = async (fromTimer = false) => {
+    if (testStatus === 'ended') return;
+    await handleSubmitCode(true); // submit, silent
+    setTestStatus('ended');
+    toast.info(fromTimer ? "Test window ended. Your code is auto-submitted." : "Test ended and submission sent.");
+  };
+
+  // Submit code logic, supports silent mode for end test, preserves old functionality
+  const handleSubmitCode = async (silent = false) => {
+    const currentProblem = problems[currentProblemIndex];
+    if (!currentProblem) return;
+
+    const userEmail = localStorage.getItem('userEmail');
+    const payload = {
+      language,
+      code,
+      testId,
+      questionNumber: currentProblemIndex,
+      userId: userEmail,
+    };
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/submissions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+      const result = await response.json();
+      setTestResults(result);
+
+      const total = result.length;
+      const passed = result.filter((test) => test.passed).length;
+      if (!silent) alert(`Submitted! ✅ Passed ${passed} / ${total} test cases.`);
+    } catch (error) {
+      if (!silent) {
+        console.error("❌ Submission failed:", error);
+        toast.error("❌ Failed to submit code");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Run code logic (unchanged)
   const handleRunCode = async () => {
     const currentProblem = problems[currentProblemIndex];
     if (!currentProblem) {
@@ -156,9 +275,8 @@ const CodingEnvironment = () => {
       return;
     }
 
-    setIsRunning(true); 
+    setIsRunning(true);
     const userEmail = localStorage.getItem('userEmail');
-
     const payload = {
       language,
       code,
@@ -170,77 +288,21 @@ const CodingEnvironment = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/submissions/run`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
       const result = await response.json();
       setTestResults(result);
     } catch (error) {
       console.error("❌ Run failed:", error);
       toast.error("Failed to run code");
-
     } finally {
-      setIsRunning(false); // ✅ Stop loader
+      setIsRunning(false);
     }
   };
-
- const handleSubmitCode = async () => {
-  const currentProblem = problems[currentProblemIndex];
-  if (!currentProblem) {
-    console.error("No current problem to submit");
-    return;
-  }
-
-  const userEmail = localStorage.getItem('userEmail');
-
-  const payload = {
-    language,
-    code,
-    testId,
-    questionNumber: currentProblemIndex,
-    userId: userEmail,
-  };
-
-  setIsSubmitting(true); // show loader if needed
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/submissions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    setTestResults(result);
-
-    // ✅ Count how many test cases passed
-    const total = result.length;
-    const passed = result.filter((test) => test.passed).length;
-
-    // ✅ Show toast with result summary
-    alert(`Submitted! ✅ Passed ${passed} / ${total} test cases.`);
-
-  } catch (error) {
-    console.error("❌ Submission failed:", error);
-    toast.error("❌ Failed to submit code");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
 
   function debounce(func, delay) {
     let timeout;
@@ -261,41 +323,28 @@ const CodingEnvironment = () => {
   // Setup resize handlers for panels
   useEffect(() => {
     const handleLeftResize = (e) => {
-      if (e.buttons !== 1) return; // Only resize when primary mouse button is pressed
-
+      if (e.buttons !== 1) return;
       const container = document.querySelector('.coding-container');
       const containerWidth = container.offsetWidth;
       const newLeftWidth = Math.min(Math.max(e.clientX, 250), containerWidth - 400);
-
       leftPanelRef.current.style.width = `${newLeftWidth}px`;
       rightPanelRef.current.style.width = `${containerWidth - newLeftWidth}px`;
     };
     const handleRightResize = (e) => {
       if (e.buttons !== 1) return;
-      // Calculate the new height of the editor container based on mouse position
       const editorContainer = rightPanelRef.current;
       const resultsStartY = e.clientY - editorContainer.getBoundingClientRect().top;
-
-      // Ensure height is within a valid range (not too small, not too large)
       const newEditorHeight = Math.min(Math.max(resultsStartY, 200), editorContainer.offsetHeight - 100);
-
-      // Update the editor container's height
       if (editorContainerRef.current) {
         editorContainerRef.current.style.height = `${newEditorHeight}px`;
       }
-
-      // Adjust the results panel height to match the remaining space
       if (resultsPanelRef.current) {
         resultsPanelRef.current.style.height = `calc(100% - ${newEditorHeight}px)`;
       }
-
-      // Trigger Monaco layout to adjust for the new height
       requestAnimationFrame(() => {
         monacoRef.current?.layout();
       });
     };
-
-
 
     const leftResizer = resizeLeftRef.current;
     const rightResizer = resizeRightRef.current;
@@ -306,14 +355,12 @@ const CodingEnvironment = () => {
         document.addEventListener('mousemove', handleLeftResize);
       });
     }
-
     if (rightResizer) {
       rightResizer.addEventListener('mousedown', () => {
         document.body.style.userSelect = 'none';
         document.addEventListener('mousemove', handleRightResize);
       });
     }
-
     document.addEventListener('mouseup', () => {
       document.body.style.userSelect = '';
       document.removeEventListener('mousemove', handleLeftResize);
@@ -327,7 +374,6 @@ const CodingEnvironment = () => {
       document.removeEventListener('mouseup', () => { });
       document.removeEventListener('mousemove', handleLeftResize);
       document.removeEventListener('mousemove', handleRightResize);
-
     };
   }, []);
 
@@ -345,9 +391,77 @@ const CodingEnvironment = () => {
       highlight: isDarkMode ? 'bg-gray-700' : 'bg-gray-200',
       resizer: isDarkMode ? 'bg-gray-700 hover:bg-blue-500' : 'bg-gray-300 hover:bg-blue-400',
     };
-
   };
   const themeClasses = getThemeClasses();
+
+  // Fallback: out of test window
+  if (testStatus === 'out-of-window' && testDetails) {
+    return (
+      <div className={`flex flex-col items-center justify-center min-h-screen ${themeClasses.background} ${themeClasses.text}`}>
+        <div className="text-center max-w-md p-6 border rounded shadow-xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-blue-100 dark:shadow-blue-900">
+          <XCircle className="mx-auto text-red-500 animate-bounce" size={54} />
+          <h2 className="text-2xl font-bold mb-3 mt-4 text-red-600">Test Window Closed</h2>
+          <p className="mb-6 font-medium text-lg">
+            The test was conducted between<br />
+            <span className="font-semibold">{new Date(testDetails.startTime).toLocaleString()}</span> and <span className="font-semibold">{new Date(testDetails.endTime).toLocaleString()}</span>.
+          </p>
+          <p className="text-gray-500 text-md bg-red-50 dark:bg-red-900 rounded px-3 py-2 font-semibold">You cannot access this test at this time.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: test ended/submitted
+  if (testStatus === 'ended' && testDetails) {
+    return (
+      <div className={`flex flex-col items-center justify-center min-h-screen ${themeClasses.background} ${themeClasses.text}`}>
+        <div className="text-center max-w-md p-6 border rounded shadow-xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-green-100 dark:shadow-green-900">
+          <CheckCircle className="mx-auto text-green-500 animate-bounce" size={54} />
+          <h2 className="text-2xl font-bold mb-3 mt-4 text-green-700">Test Submitted</h2>
+          <p className="mb-6 font-medium text-lg">
+            You have submitted the test.<br />
+            <span className="font-semibold">Test window:</span><br />
+            <span className="font-semibold">{new Date(testDetails.startTime).toLocaleString()}</span> – <span className="font-semibold">{new Date(testDetails.endTime).toLocaleString()}</span>
+          </p>
+          <div className="bg-blue-50 dark:bg-gray-800 rounded-lg p-4 mt-4 shadow-inner border border-blue-200 dark:border-blue-800">
+            <h3 className="font-semibold mb-2 text-blue-700 dark:text-blue-300 text-left">Your Submissions:</h3>
+            {submissions.length > 0 ? (
+              <ul className="space-y-2 text-left">
+                {submissions.map((sub, idx) => (
+                  <li key={sub._id || idx} className="border rounded-md p-2 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-900 shadow-sm">
+                    <div className="flex justify-between">
+                      <span>Problem: <span className="font-semibold">#{(sub.questionNumber || (idx+1))}</span></span>
+                      <span className="text-xs text-gray-400">{new Date(sub.createdAt || Date.now()).toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-gray-500 mt-1">Language: <span className="font-semibold">{sub.language}</span></span>
+                      <span className="block text-xs text-gray-500 mt-1">Score: <span className="font-semibold">{Array.isArray(sub.results) ? `${sub.results.filter(r => r.passed).length} / ${sub.results.length}` : '-'}</span></span>
+                    </div>
+                    <details className="mt-2">
+                      <summary className="text-blue-600 cursor-pointer text-sm font-bold">View Code & Results</summary>
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                        <pre className="overflow-x-auto text-xs bg-gray-200 dark:bg-gray-900 p-2 rounded">{sub.code}</pre>
+                        <div className="mt-2">
+                          {Array.isArray(sub.results) && sub.results.map((r, i) => (
+                            <div key={i} className="flex items-center space-x-2">
+                              {r.passed ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
+                              <span className="text-xs">Input: <code>{r.input}</code> &rarr; Output: <code>{r.actualOutput}</code> {r.passed ? '' : <span className="text-red-500">(wrong)</span>}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-600 bg-blue-100 dark:bg-blue-900 rounded px-2 py-1">No submissions were found for your account.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -356,7 +470,7 @@ const CodingEnvironment = () => {
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
             <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
           </div>
-          <p className="mt-4">Loading coding environment...</p>
+          <p className="mt-4 text-lg font-semibold">Loading coding environment...</p>
         </div>
       </div>
     );
@@ -366,11 +480,11 @@ const CodingEnvironment = () => {
   if (error) {
     return (
       <div className={`flex items-center justify-center min-h-screen ${themeClasses.background} ${themeClasses.text}`}>
-        <div className="text-center max-w-md p-4">
+        <div className="text-center max-w-md p-6 rounded-lg shadow-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold mb-2">Error Loading Data</h2>
           <p className="mb-4">{error}</p>
-          <p className="text-sm">Please check your Internet  connection and try again.</p>
+          <p className="text-sm text-red-700">Please check your Internet connection and try again.</p>
         </div>
       </div>
     );
@@ -388,16 +502,12 @@ const CodingEnvironment = () => {
     );
   }
 
-
   return (
-
-
     <div className={`flex flex-col h-screen ${themeClasses.background} ${themeClasses.text} rounded-sm`}>
       {/* Navbar */}
       <div className={`${themeClasses.navbar} border-b p-3 flex items-center justify-between`}>
         <div className="flex items-center space-x-4">
           <div className="text-xl font-bold text-blue-500">CodeSentry Coding Environment</div>
-
           {/* Problem List Dropdown */}
           <div className="relative">
             <button
@@ -408,15 +518,13 @@ const CodingEnvironment = () => {
               <span>Problems</span>
               <ChevronDown size={16} />
             </button>
-
             {isProblemListOpen && (
               <div className={`absolute top-10 left-0 z-10 w-64 ${themeClasses.panel} border rounded-md shadow-lg`}>
                 <div className="p-2">
                   {problems.map((problem, index) => (
                     <div
                       key={problem.id}
-                      className={`p-2 rounded-md cursor-pointer ${currentProblemIndex === index ? 'bg-blue-600 text-white' : `hover:${themeClasses.highlight}`
-                        }`}
+                      className={`p-2 rounded-md cursor-pointer ${currentProblemIndex === index ? 'bg-blue-600 text-white' : `hover:${themeClasses.highlight}`}`}
                       onClick={() => {
                         setCurrentProblemIndex(index);
                         setIsProblemListOpen(false);
@@ -436,12 +544,14 @@ const CodingEnvironment = () => {
             )}
           </div>
         </div>
-
         {/* Left navigation */}
-        <div className="flex items-center space-x-5"> <button className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-all duration-200 shadow-sm ${currentProblemIndex === 0 ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60' : `${themeClasses.primaryButton} text-white hover:shadow-md`}`} onClick={handlePrevProblem} disabled={currentProblemIndex === 0} > <ChevronLeft size={16} className="transform transition-transform group-hover:-translate-x-0.5" /> <span>Previous</span> </button>
-
-          <Timer isDarkMode={isDarkMode} />
-
+        <div className="flex items-center space-x-5">
+          <button className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-all duration-200 shadow-sm ${currentProblemIndex === 0 ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60' : `${themeClasses.primaryButton} text-white hover:shadow-md`}`} onClick={handlePrevProblem} disabled={currentProblemIndex === 0} >
+            <ChevronLeft size={16} className="transform transition-transform group-hover:-translate-x-0.5" />
+            <span>Previous</span>
+          </button>
+          {/* --- EndTime Timer --- */}
+          <EndTimeTimer endTime={testDetails?.endTime} onTimerEnd={handleTimerEnd} isDarkMode={isDarkMode} />
           <button
             className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-all duration-200 shadow-sm ${currentProblemIndex === problems.length - 1
               ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60'
@@ -467,22 +577,20 @@ const CodingEnvironment = () => {
               <Moon size={20} className="text-violet-500" />
             }
           </button>
-
           <button
             className="px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-lg flex items-center space-x-2 transition-all duration-300 shadow-sm hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-red-400"
-
             aria-label="End Test"
+            onClick={handleEndTest}
+            disabled={testStatus === 'ended'}
           >
             <LogOut size={18} />
             <span className="font-semibold tracking-wide text-sm">End Test</span>
           </button>
-
           <button className={`px-3.5 py-2 ${themeClasses.buttonSecondary} rounded-md flex items-center space-x-1.5 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400`}>
             <Settings size={16} />
             <span className="font-medium">Settings</span>
           </button>
         </div>
-
       </div>
 
       {/* Main coding container */}
@@ -496,21 +604,18 @@ const CodingEnvironment = () => {
           {/* Tabs */}
           <div className={`flex border-b ${themeClasses.border}`}>
             <button
-              className={`px-4 py-2 font-medium ${activeTab === 'problem' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'
-                }`}
+              className={`px-4 py-2 font-medium ${activeTab === 'problem' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
               onClick={() => setActiveTab('problem')}
             >
               Problem
             </button>
             <button
-              className={`px-4 py-2 font-medium ${activeTab === 'submissions' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'
-                }`}
+              className={`px-4 py-2 font-medium ${activeTab === 'submissions' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
               onClick={() => setActiveTab('submissions')}
             >
               Submissions
             </button>
           </div>
-
           {/* Problem content */}
           {activeTab === 'problem' ? (
             <div className="flex-1 overflow-y-auto p-4">
@@ -520,13 +625,11 @@ const CodingEnvironment = () => {
                 </h1>
                 <span className="text-blue-500 font-medium">{currentProblem.marks} marks</span>
               </div>
-
               <div className={`prose ${isDarkMode ? 'prose-invert' : ''} max-w-none`}>
                 <div
                   className="mb-6 whitespace-pre-line"
                   dangerouslySetInnerHTML={{ __html: currentProblem.description }}
                 />
-
                 <h3 className="text-lg font-semibold mb-2">Examples:</h3>
                 <div className="space-y-4">
                   {currentProblem.testCases.map((testCase, idx) => (
@@ -545,7 +648,6 @@ const CodingEnvironment = () => {
                     </div>
                   ))}
                 </div>
-
                 <h3 className="text-lg font-semibold mt-6 mb-2">Constraints:</h3>
                 <ul className="list-disc pl-5 space-y-1">
                   {currentProblem.constraints.map((constraint, idx) => (
@@ -556,19 +658,51 @@ const CodingEnvironment = () => {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="text-center py-6 text-gray-500">
-                No submissions yet.
+              <div className="bg-blue-50 dark:bg-gray-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 shadow-inner">
+                <h3 className="font-bold text-blue-700 dark:text-blue-200 mb-2 text-lg">Your Submissions</h3>
+                {submissions.length > 0 ? (
+                  <ul className="space-y-4 text-left">
+                    {submissions
+                      .filter(sub => sub.questionId === problems[currentProblemIndex]?.id)
+                      .map((sub, idx) => (
+                        <li key={sub._id || idx} className="border rounded-md p-2 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-900 shadow-sm">
+                          <div className="flex justify-between">
+                            <span className="font-semibold">Submission #{idx + 1}</span>
+                            <span className="text-xs text-gray-400">{new Date(sub.createdAt || Date.now()).toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-gray-500 mt-1">Language: <span className="font-semibold">{sub.language}</span></span>
+                            <span className="block text-xs text-gray-500 mt-1">Score: <span className="font-semibold">{Array.isArray(sub.results) ? `${sub.results.filter(r => r.passed).length} / ${sub.results.length}` : '-'}</span></span>
+                          </div>
+                          <details className="mt-2">
+                            <summary className="text-blue-600 cursor-pointer text-sm font-bold">View Code & Results</summary>
+                            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                              <pre className="overflow-x-auto text-xs bg-gray-200 dark:bg-gray-900 p-2 rounded">{sub.code}</pre>
+                              <div className="mt-2">
+                                {Array.isArray(sub.results) && sub.results.map((r, i) => (
+                                  <div key={i} className="flex items-center space-x-2">
+                                    {r.passed ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
+                                    <span className="text-xs">Input: <code>{r.input}</code> &rarr; Output: <code>{r.actualOutput}</code> {r.passed ? '' : <span className="text-red-500">(wrong)</span>}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </details>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <div className="text-gray-500">No submissions yet.</div>
+                )}
               </div>
             </div>
           )}
         </div>
-
         {/* Resizer for left panel */}
         <div
           ref={resizeLeftRef}
           className={`w-1 ${themeClasses.resizer} cursor-col-resize`}
         />
-
         {/* Right panel - Code editor and results */}
         <div
           ref={rightPanelRef}
@@ -585,19 +719,20 @@ const CodingEnvironment = () => {
                 <button
                   className={`flex items-center space-x-2 px-3 py-1 ${themeClasses.button} rounded-md`}
                   onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                  disabled={testStatus === 'ended'}
                 >
                   <span>{languages.find(lang => lang.value === language)?.label}</span>
                   <ChevronDown size={16} />
                 </button>
-
                 {isLanguageDropdownOpen && (
                   <div className={`absolute top-10 left-0 z-10 w-40 ${themeClasses.panel} border rounded-md shadow-lg`}>
                     {languages.map((lang) => (
                       <div
                         key={lang.value}
-                        className={`p-2 cursor-pointer ${language === lang.value ? 'bg-blue-600 text-white' : `hover:${themeClasses.highlight}`
-                          }`}
-                        onClick={() => handleLanguageChange(lang.value)}
+                        className={`p-2 cursor-pointer ${language === lang.value ? 'bg-blue-600 text-white' : `hover:${themeClasses.highlight}`}`}
+                        onClick={() => {
+                          if (testStatus !== 'ended') handleLanguageChange(lang.value);
+                        }}
                       >
                         {lang.label}
                       </div>
@@ -605,48 +740,41 @@ const CodingEnvironment = () => {
                   </div>
                 )}
               </div>
-
               <div className="flex space-x-3">
                 <button
                   className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
                   onClick={handleRunCode}
-                  disabled={isRunning}
+                  disabled={isRunning || testStatus === 'ended'}
                 >
                   <Play size={16} />
                   <span>{isRunning ? "Running..." : "Run"}</span>
                 </button>
-
                 <button
                   className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
-                  onClick={handleSubmitCode}
-                  disabled={isSubmitting}
+                  onClick={() => handleSubmitCode()}
+                  disabled={isSubmitting || testStatus === 'ended'}
                 >
                   <Send size={16} />
                   <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
                 </button>
-
               </div>
-
             </div>
-
             <div className="flex-1 flex flex-col overflow-hidden">
               <MonacoEditorWrapper
                 ref={monacoRef}
                 language={language}
                 code={code}
                 theme={theme}
-                onChange={handleEditorChange}
+                onChange={setCode}
+                readOnly={testStatus === 'ended'}
               />
-
             </div>
           </div>
-
           {/* Resizer for editor and results */}
           <div
             ref={resizeRightRef}
             className={`h-1 ${themeClasses.resizer} cursor-row-resize`}
           />
-
           {/* Test results */}
           <div
             ref={resultsPanelRef}
@@ -656,7 +784,6 @@ const CodingEnvironment = () => {
             <div className={`${themeClasses.secondaryPanel} p-2 flex justify-between items-center border-b ${themeClasses.border}`}>
               <span className="font-medium">Test Results</span>
             </div>
-
             <div className="overflow-y-auto h-full p-4">
               {testResults.length > 0 ? (
                 <div className="space-y-4">
@@ -673,8 +800,8 @@ const CodingEnvironment = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
-    
   );
 };
 
