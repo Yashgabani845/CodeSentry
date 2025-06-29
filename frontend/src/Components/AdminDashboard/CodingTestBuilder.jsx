@@ -99,6 +99,7 @@ const SuccessModal = ({ isOpen, onClose, testId }) => {
 
 const CodingTestBuilder = () => {
   const API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
+ const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const { id } = useParams(); // This is the parent test ID
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ const CodingTestBuilder = () => {
     constraints: [''],
     marks: 25,
     solution: '// Your JavaScript solution here\n\nfunction solve(input) {\n  // Write your code here\n  \n  return result;\n}',
-    createdBy: 'admin',
+    createdBy: user.id || '',
     testId: id // Store the parent test ID
   });
 
