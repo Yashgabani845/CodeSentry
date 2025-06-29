@@ -5,6 +5,9 @@ const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const CreateTest = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+
   const [formData, setFormData] = useState({
     testName: '',
     testType: 'APTITUDE',
@@ -12,7 +15,7 @@ const CreateTest = () => {
     duration: 60,
     totalMarks: 100,
     passingMarks: 40,
-    createdBy: 'admin'
+    createdBy: user.id || '',
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,13 +60,7 @@ const CreateTest = () => {
       setError('Failed to create test. Please try again later.');
       
       // For demo purposes, navigate to the appropriate page
-      setTimeout(() => {
-        if (formData.testType === 'APTITUDE') {
-          navigate('/admin/aptitude-test/demo-id');
-        } else {
-          navigate('/admin/coding-test/demo-id');
-        }
-      }, 1000);
+      
     } finally {
       setIsSubmitting(false);
     }

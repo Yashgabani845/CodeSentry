@@ -13,7 +13,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Tests', path: '/admin/tests', icon: BookOpen },
     { name: 'Create Test', path: '/admin/tests/create', icon: PlusCircle },
     { name: 'Candidates', path: '/admin/candidates', icon: Users },
-    { name: 'Settings', path: '/admin/settings', icon: Settings },
+    { name: 'Submissions', path: '/admin/submission', icon: Settings },
   ];
 
   const toggleSidebar = () => {

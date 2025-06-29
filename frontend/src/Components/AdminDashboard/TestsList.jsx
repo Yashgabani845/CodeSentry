@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Edit, Trash2, Search, Filter, Code, GitPullRequest } from 'lucide-react';
+import { Eye, Edit, Trash2, Search, Filter, Code, GitPullRequest, Copy, Check } from 'lucide-react';
 const  API_BASE_URL = process.env.REACT_APP_PROD_API_BASE_URL;
 
 const TestsList = () => {
@@ -8,6 +8,7 @@ const TestsList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('ALL');
+  const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -48,6 +49,26 @@ const TestsList = () => {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const copyTestLink = async (testId) => {
+    const testLink = `https://code-sentry.vercel.app/code/${testId}`;
+    try {
+      await navigator.clipboard.writeText(testLink);
+      setCopiedId(testId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = testLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopiedId(testId);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -172,6 +193,27 @@ const TestsList = () => {
                   <tr key={test.id} className="hover:bg-gray-50 transition-colors duration-150">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">{test.testName}</div>
+                      {(test.testType === 'CODING' || test.testType === 'coding') && (
+                        <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500">
+                          <span>Test Link:</span>
+                          <div className="flex items-center bg-gray-50 rounded px-2 py-1 border">
+                            <span className="text-gray-600 truncate max-w-xs">
+                              https://code-sentry.vercel.app/code/{test.id}
+                            </span>
+                            <button
+                              onClick={() => copyTestLink(test.id)}
+                              className="ml-2 p-1 hover:bg-gray-200 rounded transition-colors duration-200"
+                              title="Copy test link"
+                            >
+                              {copiedId === test.id ? (
+                                <Check className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-gray-500" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       {test.testType === 'CODING' ? (

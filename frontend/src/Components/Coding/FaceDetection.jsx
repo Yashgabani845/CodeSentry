@@ -112,7 +112,7 @@ export function withFaceVerification(WrappedComponent) {
         } else if (resp.status === 401) {
           setStatus("verify-fail");
           console.log("No face detected.");
-          setMessage("No face matched. Please keep your face visible.");
+          setMessage("No face matched.");
         } else if (resp.status === 403) {
           setStatus("verify-fail");
           console.log("Face does not match enrollment.");

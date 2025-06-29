@@ -49,11 +49,10 @@ function Signup() {
       // After successful signup/login
       localStorage.setItem('user', JSON.stringify({ id: userData.id, role: userData.role, email: userData.email }));
       // Conditional redirection based on role
-      if (formData.role === "employer") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      
+        navigate("/login");
+      
+      
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {
