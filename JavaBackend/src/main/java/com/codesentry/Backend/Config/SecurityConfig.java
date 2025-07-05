@@ -17,9 +17,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity (not recommended for production)
+            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity 
             .authorizeHttpRequests(authz -> authz
-                .anyRequest().permitAll() // Allow all requests (update as needed)
+                .anyRequest().permitAll() 
             );
         return http.build();
     }
@@ -28,24 +28,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow specific origins - add all trusted domains here
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "https://code-sentry.vercel.app"
-            // Add other origins as needed
         ));
         
         // Allow credentials
         configuration.setAllowCredentials(true);
         
-        // Allow specific methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         
-        // Allow specific headers
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         
-        // Expose specific headers if needed
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

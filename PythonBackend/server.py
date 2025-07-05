@@ -1,41 +1,3 @@
-# from flask import Flask, request, send_file
-# from flask_cors import CORS
-# import cv2
-# import numpy as np
-# import io
-
-# app = Flask(__name__)
-# CORS(app)
-
-# # Load face detection model
-# face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-# @app.route('/detect', methods=['POST'])
-# def detect():
-#     file = request.files['image']
-#     image_bytes = np.asarray(bytearray(file.read()), dtype=np.uint8)
-#     frame = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
-
-#     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-#     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3)  # loosen parameters
-
-#     print(f"Faces detected: {len(faces)}")  # DEBUG print
-
-#     if len(faces) > 1:
-#         for (x, y, w, h) in faces:
-#             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
-#         _, img_encoded = cv2.imencode('.jpg', frame)
-#         return send_file(
-#             io.BytesIO(img_encoded.tobytes()),
-#             mimetype='image/jpeg',
-#             as_attachment=False
-#         )
-#     else:
-#         return '', 204
-
-# if __name__ == '__main__':
-#     app.run(port=5000)
-
 import face_recognition
 import cv2
 import traceback
@@ -97,12 +59,10 @@ def enroll():
         file.stream.seek(0)
         image = face_recognition.load_image_file(file.stream)
 
-        # Save the image for debugging/audit purposes
         from PIL import Image as PILImage
         pil_image = PILImage.fromarray(image)
-        pil_image.save('enrolled_face.jpg')  # This will overwrite each time!
+        pil_image.save('enrolled_face.jpg')  
 
-        # Usual checks
         if image.ndim != 3 or image.shape[2] != 3:
             return "Image is not a valid RGB image.", 400
         if image.dtype != np.uint8:
@@ -139,7 +99,7 @@ def verify():
 
     if len(encodings) == 0 or len(face_locations) == 0:
         _, img_encoded = cv2.imencode('.jpg', frame)
-        response = make_response(img_encoded.tobytes(), 401)  # <-- Return 401
+        response = make_response(img_encoded.tobytes(), 401)
         response.headers.set('Content-Type', 'image/jpeg')
         response.headers.set('X-Face-Status', 'not_detected')
         return response
@@ -159,7 +119,7 @@ def verify():
         for (top, right, bottom, left) in face_locations:
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
         _, img_encoded = cv2.imencode('.jpg', frame)
-        response = make_response(img_encoded.tobytes(), 403)  # <-- Return 403
+        response = make_response(img_encoded.tobytes(), 403) 
         response.headers.set('Content-Type', 'image/jpeg')
         response.headers.set('X-Face-Status', 'not_matched')
         return response
@@ -169,6 +129,43 @@ def health():
     return 'OK'
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # default to 5000, but use PORT if set
+    port = int(os.environ.get('PORT', 5000)) 
     app.run(host='0.0.0.0', port=port)
 
+# from flask import Flask, request, send_file
+# from flask_cors import CORS
+# import cv2
+# import numpy as np
+# import io
+
+# app = Flask(__name__)
+# CORS(app)
+
+# # Load face detection model
+# face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+# @app.route('/detect', methods=['POST'])
+# def detect():
+#     file = request.files['image']
+#     image_bytes = np.asarray(bytearray(file.read()), dtype=np.uint8)
+#     frame = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+
+#     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+#     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3)  # loosen parameters
+
+#     print(f"Faces detected: {len(faces)}")  # DEBUG print
+
+#     if len(faces) > 1:
+#         for (x, y, w, h) in faces:
+#             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+#         _, img_encoded = cv2.imencode('.jpg', frame)
+#         return send_file(
+#             io.BytesIO(img_encoded.tobytes()),
+#             mimetype='image/jpeg',
+#             as_attachment=False
+#         )
+#     else:
+#         return '', 204
+
+# if __name__ == '__main__':
+#     app.run(port=5000)

@@ -16,7 +16,6 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-    // Create new user
     @PostMapping("/add")
     public User createUser(@RequestBody User user) {
         if (user.getFirstName() == null || user.getLastName() == null ||
@@ -24,7 +23,6 @@ public class UserController {
             throw new RuntimeException("Missing required fields");
         }
 
-        // Check if email already exists
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new RuntimeException("User with this email already exists");
         }
@@ -32,7 +30,6 @@ public class UserController {
         return userRepository.save(user);
     }
 
-    // Get all users
     @GetMapping("/all")
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -43,14 +40,12 @@ public class UserController {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // Get user by email
     @GetMapping("/by-email")
     public User getUserByEmail(@RequestParam String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    // Login user (simple example for local testing)
     @PostMapping("/login")
     public User loginUser(@RequestBody User loginData) {
         Optional<User> userOpt = userRepository.findByEmail(loginData.getEmail());
