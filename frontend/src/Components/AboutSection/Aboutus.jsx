@@ -28,7 +28,7 @@ const AboutUs = () => {
       name: "Vaibhav Dhanani",
       image: vaibhav,
       description: "Java Developer, exploring software world and IT industry.",
-      email: "thakkarmeet2145@gmail.com",
+      email: "vaibhavdhanani2711@gmail.com",
     },
   ]
 
