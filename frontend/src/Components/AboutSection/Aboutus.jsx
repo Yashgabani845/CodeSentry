@@ -1,10 +1,10 @@
-
 "use client"
 
 import { useState } from "react"
 import { Users, Target, Award, Lightbulb, Shield, Heart, Globe } from "lucide-react"
 import yash from "./yash.jpg"
 import meet from "./meet.png"
+import vaibhav from "./vaibhav.jpeg"
 import Navbar from "../Homepage/Navbar"
 import Footer from "../Homepage/Footer"
 
@@ -22,6 +22,12 @@ const AboutUs = () => {
       name: "Meet Thakkar",
       image: meet,
       description: "Developer focused on building secure and scalable solutions.",
+      email: "thakkarmeet2145@gmail.com",
+    },
+    {
+      name: "Vaibhav Dhanani",
+      image: vaibhav,
+      description: "Java Developer, exploring software world and IT industry.",
       email: "thakkarmeet2145@gmail.com",
     },
   ]
